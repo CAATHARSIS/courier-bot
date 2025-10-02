@@ -1,0 +1,22 @@
+version: "2"
+
+run:
+  timeout: 5m
+  modules-download-mode: readonly
+
+linters:
+  enable:
+    - govet
+    - staticcheck
+    - gocritic
+    - unused
+    - ineffassign
+    - bodyclose
+    - goconst
+  disable:
+    - errcheck
+
+formatters:
+  enable:
+    - gofmt
+    - goimports
