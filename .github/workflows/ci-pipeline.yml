@@ -23,5 +23,5 @@ jobs:
       - name: Run golangci-lint
         uses: golangci/golangci-lint-action@v8
         with:
-          version: 2.4.0
+          version: v2.4.0
           args: --verbose
