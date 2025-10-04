@@ -12,10 +12,10 @@ type Order struct {
 	Address                string     `json:"address"`
 	Flat                   string     `json:"flat"`
 	Entrance               string     `json:"entrance"`
-	DeliveryPrice          int    `json:"delivery_price"`
-	FirstPrice             int    `json:"first_price"`
-	FinalPrice             int    `json:"final_price"`
-	PaidPrice              int    `json:"paid_price"`
+	DeliveryPrice          int        `json:"delivery_price"`
+	FirstPrice             int        `json:"first_price"`
+	FinalPrice             int        `json:"final_price"`
+	PaidPrice              int        `json:"paid_price"`
 	BonusAccrualPercentage int        `json:"bonus_accrual_percentage"`
 	RecievedBonuses        int        `json:"recieved_bonuses"`
 	LostBonuses            int        `json:"lost_bonuses"`
