@@ -131,7 +131,7 @@ func (r *courierRepository) Update(ctx context.Context, courier *models.Courier)
 
 	oldCourier, err := r.GetByID(ctx, courier.ID)
 	if err != nil {
-		return nil, fmt.Errorf("Invalid courier id: %v", err)
+		return nil, fmt.Errorf("invalid courier id: %v", err)
 	}
 
 	if courier.TelegramID == 0 {
