@@ -1,0 +1,11 @@
+package interfaces
+
+import (
+	"context"
+	"courier-bot/internal/models"
+)
+
+type Order interface {
+	GetByID(ctx context.Context, id int) (*models.Order, error)
+	UpdateCourierID(ctx context.Context, ID int, courier *models.Courier) error
+}

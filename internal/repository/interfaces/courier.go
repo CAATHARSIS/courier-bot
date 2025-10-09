@@ -6,9 +6,11 @@ import (
 )
 
 type CourierRepository interface {
-	GetByID(context.Context, int) (*models.Courier, error)
-	Create(context.Context, *models.Courier) error
-	Update(context.Context, *models.Courier) (*models.Courier, error)
-	DeleteByID(context.Context, int) error
-	List(context.Context) ([]*models.Courier, error)
+	GetByID(ctx context.Context, id int) (*models.Courier, error)
+	Create(ctx context.Context, courier *models.Courier) error
+	Update(ctx context.Context, couier *models.Courier) (*models.Courier, error)
+	DeleteByID(ctx context.Context, id int) error
+	List(ctx context.Context) ([]*models.Courier, error)
+	GetActiveCouriers(ctx context.Context) ([]*models.Courier, error)
+	GetByChatID(ctx context.Context, chatID int) (*models.Courier, error)
 }

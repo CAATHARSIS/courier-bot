@@ -263,3 +263,99 @@ func (r *courierRepository) List(ctx context.Context) ([]*models.Courier, error)
 
 	return couriers, nil
 }
+
+func (r *courierRepository) GetActiveCouriers(ctx context.Context) ([]*models.Courier, error) {
+	query := `
+		SELECT
+			id,
+			telegram_id,
+			chat_id,
+			name,
+			phone,
+			is_active,
+			last_seen,
+			current_order_id,
+			rating,
+			created_at
+		FROM
+			couriers
+		WHERE
+			is_active = true
+	`
+
+	rows, err := r.db.QueryContext(ctx, query)
+	if err != nil {
+		return nil, fmt.Errorf("failed to list active couriers: %v", err)
+	}
+	defer rows.Close()
+
+	var activeCouriers []*models.Courier
+
+	for rows.Next() {
+		var activeCourier models.Courier
+
+		err := rows.Scan(
+			&activeCourier.ID,
+			&activeCourier.TelegramID,
+			&activeCourier.ChatID,
+			&activeCourier.Name,
+			&activeCourier.Phone,
+			&activeCourier.IsActive,
+			&activeCourier.LastSeen,
+			&activeCourier.CurrentOrderID,
+			&activeCourier.Rating,
+			&activeCourier.CreatedAt,
+		)
+		if err != nil {
+			return nil, fmt.Errorf("failed to scan active courier: %v", err)
+		}
+
+		activeCouriers = append(activeCouriers, &activeCourier)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("rows error: %v", err)
+	}
+
+	return activeCouriers, nil
+}
+
+func (r *courierRepository) GetByChatID(ctx context.Context, chatID int) (*models.Courier, error) {
+	query := `
+		SELECT
+			id,
+			telegram_id,
+			chat_id,
+			name,
+			phone,
+			is_active,
+			last_seen,
+			current_order_id,
+			rating,
+			created_at
+		FROM
+			couriers
+		WHERE
+			chat_id = $1
+	`
+
+	var courier models.Courier
+
+	err := r.db.QueryRowContext(ctx, query, chatID).Scan(
+		&courier.ID,
+		&courier.TelegramID,
+		&courier.ChatID,
+		&courier.Name,
+		&courier.Phone,
+		&courier.IsActive,
+		&courier.LastSeen,
+		&courier.CurrentOrderID,
+		&courier.Rating,
+		&courier.CreatedAt,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get courier by chatID: %v", err)
+	}
+
+	return &courier, nil
+}

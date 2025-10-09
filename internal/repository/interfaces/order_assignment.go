@@ -6,9 +6,12 @@ import (
 )
 
 type OrderAssignment interface {
-	Create(context.Context, *models.OrderAssignment) error
-	GetByID(context.Context, int) (*models.OrderAssignment, error)
-	Update(context.Context, *models.OrderAssignment) (*models.OrderAssignment, error)
-	DeleteByID(context.Context, int) error
-	List(context.Context) ([]*models.OrderAssignment, error)
+	Create(ctx context.Context, orderAssignment *models.OrderAssignment) error
+	GetByID(ctx context.Context, id int) (*models.OrderAssignment, error)
+	Update(ctx context.Context, orderAssignment *models.OrderAssignment) (*models.OrderAssignment, error)
+	DeleteByID(ctx context.Context, id int) error
+	List(ctx context.Context) ([]*models.OrderAssignment, error)
+	GetRejectedCouriers(ctx context.Context, id int) ([]int, error)
+	GetByOrderID(ctx context.Context, orderID int) (*models.OrderAssignment, error)
+	UpdateStatus(ctx context.Context, id int, status models.CourierResponseStatus) error
 }

@@ -218,3 +218,83 @@ func (r *orderAssignmentRepository) List(ctx context.Context) ([]*models.OrderAs
 
 	return orderAssignments, nil
 }
+
+func (r *orderAssignmentRepository) GetRejectedCouriers(ctx context.Context, orderID int) ([]int, error) {
+	query := `
+		SELECT
+			counter_id
+		FROM
+			order-assignments
+		WHERE
+			order_id = $1 AND courier_response_status IN ('rejected', 'expired')
+	`
+
+	rows, err := r.db.QueryContext(ctx, query, orderID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get rejected couriers: %v", err)
+	}
+	defer rows.Close()
+
+	var couriersIDs []int
+	for rows.Next() {
+		var id int
+
+		err := rows.Scan(&id)
+		if err != nil {
+			return nil, fmt.Errorf("failed to scan rejected courier id: %v", err)
+		}
+
+		couriersIDs = append(couriersIDs, id)
+	}
+
+	return couriersIDs, nil
+}
+
+func (r *orderAssignmentRepository) GetByOrderID(ctx context.Context, orderID int) (*models.OrderAssignment, error) {
+	query := `
+		SELECT
+			id,
+			order_id,
+			courier_id,
+			assigned_at,
+			expired_at,
+			courier_response_status
+		FROM
+			order_assignments
+		WHERE
+			order_id = $1
+	`
+
+	var orderAssignment models.OrderAssignment
+
+	err := r.db.QueryRowContext(ctx, query, orderID).Scan(
+		&orderAssignment.ID,
+		&orderAssignment.OrderID,
+		&orderAssignment.CourierID,
+		&orderAssignment.AssignedAt,
+		&orderAssignment.ExpiredAt,
+		&orderAssignment.CourierResponseStatus,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get order assignment with order id (%d): %v", orderID, err)
+	}
+
+	return &orderAssignment, nil
+}
+
+func (r *orderAssignmentRepository) UpdateStatus(ctx context.Context, orderID int, newStatus models.CourierResponseStatus) error {
+	query := `
+		UPDATE order_assignments
+		SET
+			courier_response_status = $1
+		WHERE
+			order_id = $2 
+	`
+
+	_, err := r.db.ExecContext(ctx, query, newStatus, orderID)
+	if err != nil {
+		return fmt.Errorf("failed to update order assignment (with order id %d) status: %v", orderID, err)
+	}
+
+	return nil
+}
