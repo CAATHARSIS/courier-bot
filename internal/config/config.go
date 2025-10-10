@@ -1,6 +1,11 @@
 package config
 
-import "os"
+import (
+	"log/slog"
+	"os"
+
+	"github.com/joho/godotenv"
+)
 
 type Config struct {
 	DBHost           string
@@ -12,7 +17,12 @@ type Config struct {
 	Env              string
 }
 
-func Load() *Config {
+func Load(log slog.Logger) *Config {
+	err := godotenv.Load()
+	if err != nil {
+		log.Warn("Warning: .env file not found")
+	}
+
 	return &Config{
 		DBHost:           getEnv("DB_HOST", "localhost"),
 		DBPort:           getEnv("DB_PORT", "5432"),

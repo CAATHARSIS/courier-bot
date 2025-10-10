@@ -1,2 +1,5 @@
 # Windows system files
 desktop.ini
+
+# Environment variables file
+.env
