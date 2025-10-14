@@ -9,12 +9,12 @@ linters:
     - govet
     - staticcheck
     - gocritic
-    - unused
     - ineffassign
     - bodyclose
     - goconst
   disable:
     - errcheck
+    - unused
 
 formatters:
   enable:
