@@ -93,6 +93,7 @@ func (m *AssignmentManager) RegisterTimer(ctx context.Context, orderID int, expi
 
 	duration := time.Until(expiry)
 	if duration <= 0 {
+		go m.HandleAssignmentTimeout(ctx, orderID)
 		return
 	}
 
