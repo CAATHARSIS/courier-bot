@@ -10,20 +10,10 @@ import (
 	"time"
 )
 
-type NotifficationSender interface {
-	SendMessage(chatID int64, message string, orderID int) error
-	SendMessageWithKeyboard(chatID int64, message string, orderID int, buttons []Button) error
-}
-
-type Button struct {
-	Text string
-	Data string
-}
-
 type Service struct {
 	repo               repository.Repository
 	log                *slog.Logger
-	notificationSender NotifficationSender
+	notificationSender NotificationSender
 	assignmentTimeout  time.Duration
 }
 
@@ -34,13 +24,7 @@ type Notification struct {
 	WithButtons   bool
 }
 
-type AssignmentResult struct {
-	Success      bool
-	CourierID    int
-	ErrorMessage string
-}
-
-func NewService(repo repository.Repository, notificationSender NotifficationSender) *Service {
+func NewService(repo repository.Repository, notificationSender NotificationSender) *Service {
 	service := &Service{
 		repo:               repo,
 		notificationSender: notificationSender,
