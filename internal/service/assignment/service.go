@@ -83,7 +83,7 @@ func (s *Service) HandleCourierResponse(ctx context.Context, chatID int64, order
 	status := models.ResponseStatusRejected
 	if accepted {
 		status = models.ResponseStatusAccepted
-		if err := s.repo.Order.UpdateCourierID(ctx, orderID, courier); err != nil {
+		if err := s.repo.Order.UpdateCourierID(ctx, orderID, courier.ID); err != nil {
 			return fmt.Errorf("failed to update order: %v", err)
 		}
 		s.log.Info("Order ACCEPTED by courier", "orderID", orderID, "courierID", courier.ID)
