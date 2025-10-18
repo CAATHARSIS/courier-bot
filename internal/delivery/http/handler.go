@@ -3,7 +3,6 @@ package http
 import (
 	"bytes"
 	"context"
-	"courier-bot/internal/service/assignment"
 	"crypto/hmac"
 	"crypto/sha256"
 	"encoding/hex"
@@ -13,6 +12,8 @@ import (
 	"log/slog"
 	"net/http"
 	"time"
+
+	"github.com/CAATHARSIS/courier-bot/internal/service/assignment"
 )
 
 type WebhookHandler struct {

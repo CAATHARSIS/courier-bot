@@ -2,12 +2,13 @@ package postgres
 
 import (
 	"context"
-	"courier-bot/internal/models"
-	"courier-bot/internal/repository/interfaces"
 	"database/sql"
 	"errors"
 	"fmt"
 	"time"
+
+	"github.com/CAATHARSIS/courier-bot/internal/models"
+	"github.com/CAATHARSIS/courier-bot/internal/repository/interfaces"
 )
 
 type courierRepository struct {

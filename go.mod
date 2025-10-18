@@ -1,4 +1,4 @@
-module courier-bot
+module github.com/CAATHARSIS/courier-bot
 
 go 1.25.1
 

@@ -2,10 +2,11 @@ package postgres
 
 import (
 	"context"
-	"courier-bot/internal/models"
 	"database/sql"
 	"errors"
 	"fmt"
+
+	"github.com/CAATHARSIS/courier-bot/internal/models"
 )
 
 type orderRepostitory struct {

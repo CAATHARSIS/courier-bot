@@ -2,7 +2,8 @@ package interfaces
 
 import (
 	"context"
-	"courier-bot/internal/models"
+
+	"github.com/CAATHARSIS/courier-bot/internal/models"
 )
 
 type OrderAssignment interface {

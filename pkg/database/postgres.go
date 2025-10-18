@@ -1,10 +1,11 @@
 package database
 
 import (
-	"courier-bot/internal/config"
 	"database/sql"
 	"fmt"
 	"time"
+
+	"github.com/CAATHARSIS/courier-bot/internal/config"
 )
 
 func NewPostgresDB(cfg *config.Config) (*sql.DB, error) {

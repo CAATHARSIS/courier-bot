@@ -2,11 +2,12 @@ package postgres
 
 import (
 	"context"
-	"courier-bot/internal/models"
-	"courier-bot/internal/repository/interfaces"
 	"database/sql"
 	"errors"
 	"fmt"
+
+	"github.com/CAATHARSIS/courier-bot/internal/models"
+	"github.com/CAATHARSIS/courier-bot/internal/repository/interfaces"
 )
 
 type orderAssignmentRepository struct {

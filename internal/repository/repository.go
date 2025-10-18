@@ -1,9 +1,10 @@
 package repository
 
 import (
-	"courier-bot/internal/repository/interfaces"
-	"courier-bot/internal/repository/postgres"
 	"database/sql"
+
+	"github.com/CAATHARSIS/courier-bot/internal/repository/interfaces"
+	"github.com/CAATHARSIS/courier-bot/internal/repository/postgres"
 )
 
 type Repository struct {

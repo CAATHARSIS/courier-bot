@@ -2,10 +2,11 @@ package assignment
 
 import (
 	"context"
-	"courier-bot/internal/models"
 	"log/slog"
 	"sync"
 	"time"
+
+	"github.com/CAATHARSIS/courier-bot/internal/models"
 )
 
 type AssignmentManager struct {

@@ -2,12 +2,13 @@ package assignment
 
 import (
 	"context"
-	"courier-bot/internal/models"
-	"courier-bot/internal/repository"
 	"errors"
 	"fmt"
 	"log/slog"
 	"time"
+
+	"github.com/CAATHARSIS/courier-bot/internal/models"
+	"github.com/CAATHARSIS/courier-bot/internal/repository"
 )
 
 type Service struct {
