@@ -18,13 +18,6 @@ func NewkeyboardManager(log *slog.Logger) *KeyboardManager {
 	}
 }
 
-const (
-	ActionAccept   = "accept"
-	ActionReject   = "reject"
-	ActionComplete = "complete"
-	ActionProblem  = "problem"
-)
-
 func (km *KeyboardManager) CreateAssignmentKeyboard(orderID int) tgbotapi.InlineKeyboardMarkup {
 	km.log.Debug("Creating assignment keyboard for order", "orderID", orderID)
 
@@ -211,11 +204,6 @@ func (km *KeyboardManager) escapeCallbackData(data string) string {
 	}
 
 	return data
-}
-
-type OrderListItem struct {
-	ID     int
-	Status string
 }
 
 func (km *KeyboardManager) GetActionFromCallback(callback string) string {
