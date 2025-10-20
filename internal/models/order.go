@@ -20,7 +20,7 @@ type Order struct {
 	RecievedBonuses        int        `json:"recieved_bonuses"`
 	LostBonuses            int        `json:"lost_bonuses"`
 	CreatedAt              time.Time  `json:"created_at"`
-	DeliverDate            *time.Time `json:"delivery_date"`
+	DeliveryDate           *time.Time `json:"delivery_date"`
 	RecievedAt             *time.Time `json:"recieved_at"`
 	IsPaid                 bool       `json:"is_paid"`
 	IsDelivery             bool       `json:"is_delivery"`

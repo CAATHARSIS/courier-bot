@@ -321,7 +321,7 @@ func (r *courierRepository) GetActiveCouriers(ctx context.Context) ([]*models.Co
 	return activeCouriers, nil
 }
 
-func (r *courierRepository) GetByChatID(ctx context.Context, chatID int) (*models.Courier, error) {
+func (r *courierRepository) GetByChatID(ctx context.Context, chatID int64) (*models.Courier, error) {
 	query := `
 		SELECT
 			id,

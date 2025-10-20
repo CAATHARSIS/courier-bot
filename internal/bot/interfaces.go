@@ -1,6 +1,8 @@
 package bot
 
 import (
+	"context"
+
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
 
@@ -53,7 +55,7 @@ type HandlersInterface interface {
 
 	HandleStartCommand(bot BotInterface, chatID int64, user *tgbotapi.User)
 	HandleHelpCommand(bot BotInterface, chatID int64)
-	HandleMyOrdersCommand(bot BotInterface, chatID int64)
+	HandleMyOrdersCommand(ctx context.Context, bot BotInterface, chatID int64)
 	HandleStatusCommand(bot BotInterface, chatID int64)
 	HandleSettingsCommand(bot BotInterface, chatID int64)
 	HandleUnknownCommand(bot BotInterface, chatID int64)
@@ -120,8 +122,11 @@ const (
 )
 
 type OrderListItem struct {
-	ID     int
-	Status string
+	ID      int
+	Status  string
+	Address string
+	Time    string
+	Price   int
 }
 
 type BotConfig struct {

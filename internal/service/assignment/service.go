@@ -62,7 +62,7 @@ func (s *Service) ProcessNewOrder(ctx context.Context, orderID int) error {
 func (s *Service) HandleCourierResponse(ctx context.Context, chatID int64, orderID int, accepted bool) error {
 	s.log.Info("Processing courier responsse", "orderID", orderID, "accepted", accepted)
 
-	courier, err := s.repo.Courier.GetByChatID(ctx, int(chatID))
+	courier, err := s.repo.Courier.GetByChatID(ctx, chatID)
 	if err != nil {
 		return fmt.Errorf("failed to get courier: %v", err)
 	}
@@ -289,7 +289,7 @@ func (s *Service) validateOrderForAssignment(order *models.Order) error {
 		return fmt.Errorf("order already assigned to courier %d", *order.CourierID)
 	}
 
-	if order.DeliverDate == nil {
+	if order.DeliveryDate == nil {
 		return fmt.Errorf("order has no delivery date")
 	}
 
@@ -298,4 +298,27 @@ func (s *Service) validateOrderForAssignment(order *models.Order) error {
 
 func (s *Service) UpdateAssignmentTimeout(timeout time.Duration) {
 	s.assignmentTimeout = timeout
+}
+
+func (s *Service) GetActiveOrdersByCourier(ctx context.Context, chatID int64) ([]models.Order, error) {
+	courier, err := s.repo.Courier.GetByChatID(ctx, chatID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get courier: %v", err)
+	}
+
+	activeOrders, err := s.repo.Order.GetActiveOrdersByCourier(ctx, courier.ID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get active orders for courier with id #%d: %v", courier.ID, err)
+	}
+
+	return activeOrders, nil
+}
+
+func (s *Service) GetByOrderID(ctx context.Context, orderID int) (*models.OrderAssignment, error) {
+	assignment, err := s.repo.OrderAssignment.GetByOrderID(ctx, orderID)
+	if err != nil {
+		return nil, err
+	}
+
+	return assignment, nil
 }

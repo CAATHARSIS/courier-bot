@@ -13,5 +13,5 @@ type CourierRepository interface {
 	DeleteByID(ctx context.Context, id int) error
 	List(ctx context.Context) ([]*models.Courier, error)
 	GetActiveCouriers(ctx context.Context) ([]*models.Courier, error)
-	GetByChatID(ctx context.Context, chatID int) (*models.Courier, error)
+	GetByChatID(ctx context.Context, chatID int64) (*models.Courier, error)
 }

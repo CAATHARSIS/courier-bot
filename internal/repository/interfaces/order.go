@@ -9,4 +9,5 @@ import (
 type Order interface {
 	GetByID(ctx context.Context, id int) (*models.Order, error)
 	UpdateCourierID(ctx context.Context, ID int, courierID int) error
+	GetActiveOrdersByCourier(ctx context.Context, courierID int) ([]models.Order, error)
 }

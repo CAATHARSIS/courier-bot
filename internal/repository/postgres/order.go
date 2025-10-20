@@ -9,15 +9,15 @@ import (
 	"github.com/CAATHARSIS/courier-bot/internal/models"
 )
 
-type orderRepostitory struct {
+type orderRepository struct {
 	db *sql.DB
 }
 
-func NewOrderRepository(db *sql.DB) *orderRepostitory {
-	return &orderRepostitory{db: db}
+func NewOrderRepository(db *sql.DB) *orderRepository {
+	return &orderRepository{db: db}
 }
 
-func (r *orderRepostitory) GetByID(ctx context.Context, id int) (*models.Order, error) {
+func (r *orderRepository) GetByID(ctx context.Context, id int) (*models.Order, error) {
 	query := `
 		SELECT
 			id,
@@ -69,7 +69,7 @@ func (r *orderRepostitory) GetByID(ctx context.Context, id int) (*models.Order, 
 		&order.RecievedBonuses,
 		&order.LostBonuses,
 		&order.CreatedAt,
-		&order.DeliverDate,
+		&order.DeliveryDate,
 		&order.RecievedAt,
 		&order.IsPaid,
 		&order.IsDelivery,
@@ -88,7 +88,7 @@ func (r *orderRepostitory) GetByID(ctx context.Context, id int) (*models.Order, 
 	return &order, nil
 }
 
-func (r *orderRepostitory) UpdateCourierID(ctx context.Context, id int, courierID int) error {
+func (r *orderRepository) UpdateCourierID(ctx context.Context, id int, courierID int) error {
 	query := `
 		UPDATE orders
 		SET
@@ -103,4 +103,101 @@ func (r *orderRepostitory) UpdateCourierID(ctx context.Context, id int, courierI
 	}
 
 	return nil
+}
+
+func (r *orderRepository) GetActiveOrdersByCourier(ctx context.Context, courierID int) ([]models.Order, error) {
+	query := `
+		SELECT
+			id,
+			user_id,
+			surname,
+			name,
+			phone_number,
+			city,
+			address,
+			flat,
+			entrance,
+			delivery_price,
+			first_price,
+			final_price,
+			paid_price,
+			bonus_accrual_percentage,
+			received_bonuses,
+			lost_bonuses,
+			created_at,
+			delivery_date,
+			received_at,
+			is_paid,
+			is_delivery,
+			is_assembled,
+			is_received,
+			payment_url,
+			courier_id
+		FROM
+			orders
+		WHERE
+			courier_id = $1
+			AND is_paid = true
+			AND is_assembled = true
+			AND is_received = false
+			AND delivery_date >= NOW() - INTERVAL '1 day'
+		ORDER BY
+			CASE
+				WHEN delivery_date <= NOW() THEN 1
+				WHEN DATE(delivery_date) = CURRENT_DATE THEN 2
+				ELSE 3
+			END,
+			delivery_date ASC
+	`
+
+	rows, err := r.db.QueryContext(ctx, query, courierID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to list active orders by courier: %v", err)
+	}
+	defer rows.Close()
+
+	var orders []models.Order
+	for rows.Next() {
+		var order models.Order
+
+		err := rows.Scan(
+			&order.ID,
+			&order.UserID,
+			&order.Surname,
+			&order.Name,
+			&order.PhoneNumber,
+			&order.City,
+			&order.City,
+			&order.Address,
+			&order.Flat,
+			&order.Entrance,
+			&order.DeliveryPrice,
+			&order.FirstPrice,
+			&order.FinalPrice,
+			&order.PaidPrice,
+			&order.BonusAccrualPercentage,
+			&order.RecievedBonuses,
+			&order.LostBonuses,
+			&order.CreatedAt,
+			&order.DeliveryDate,
+			&order.RecievedAt,
+			&order.IsPaid,
+			&order.IsDelivery,
+			&order.IsAssembled,
+			&order.IsReceived,
+			&order.PaymentUrl,
+			&order.CourierID,
+		)
+		if err != nil {
+			return nil, fmt.Errorf("failed to scan order: %v", err)
+		}
+
+		orders = append(orders, order)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("rows error: %v", err)
+	}
+
+	return orders, nil
 }
