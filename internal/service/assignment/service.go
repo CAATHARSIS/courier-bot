@@ -322,3 +322,7 @@ func (s *Service) GetByOrderID(ctx context.Context, orderID int) (*models.OrderA
 
 	return assignment, nil
 }
+
+func (s *Service) UpdateOrderStatusReceived(ctx context.Context, ID int, received bool) error {
+	return s.repo.Order.UpdateStatusReceived(ctx, ID, received)
+}

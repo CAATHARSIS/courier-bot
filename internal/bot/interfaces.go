@@ -11,8 +11,8 @@ type BotInterface interface {
 	SendMessageWithKeyboard(chatID int64, text string, keyboard tgbotapi.ReplyKeyboardMarkup) error
 	SendMessageWithInlineKeyboard(chatID int64, text string, keyboard tgbotapi.InlineKeyboardMarkup) error
 
-	EditMessageText(chatID int64, messageID int, text string) error
-	EditMessageReplyMarkup(chatID int64, messageID int, replyMarkup interface{}) error
+	EditMessageText(chatID int64, messageID int64, text string) error
+	EditMessageReplyMarkup(chatID int64, messageID int64, replyMarkup interface{}) error
 
 	AnswerCallbackQuery(callbackQueryID string) error
 	AnswerCallbackQueryWithText(callbackQueryID, text string) error
@@ -60,9 +60,9 @@ type HandlersInterface interface {
 	HandleSettingsCommand(bot BotInterface, chatID int64)
 	HandleUnknownCommand(bot BotInterface, chatID int64)
 
-	HandleAcceptOrder(bot BotInterface, chatID int64, callbackData string, messageID int)
-	HandleRejectOrder(bot BotInterface, chatID int64, callbackData string, messageID int)
-	HandleCompleteOrder(bot BotInterface, chatID int64, callbackData string)
+	HandleAcceptOrder(ctx context.Context, bot BotInterface, chatID int64, callbackData string, messageID int64)
+	HandleRejectOrder(ctx context.Context, bot BotInterface, chatID int64, callbackData string, messageID int64)
+	HandleCompleteOrder(ctx context.Context, bot BotInterface, chatID int64, callbackData string)
 	HandleProblemOrder(bot BotInterface, chatID int64, callbackData string)
 	HandleNavigation(bot BotInterface, chatID int64, callbackData string)
 	HanldeCallCustomeer(bot BotInterface, chatID int64, callbackData string)

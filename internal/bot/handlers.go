@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+	"strconv"
+	"strings"
 	"time"
 
 	"github.com/CAATHARSIS/courier-bot/internal/models"
@@ -145,11 +147,12 @@ func (h *Handlers) determineOrderStatus(ctx context.Context, order models.Order)
 	case "waiting":
 		return "⏳ Ожидает ответа"
 	case "accepted":
-		if order.IsReceived {
+		switch {
+		case order.IsReceived:
 			return "✅ Доставлен"
-		} else if h.isDeliveryInProgerss(order) {
+		case h.isDeliveryInProgerss(order):
 			return "🚗 В доставке"
-		} else {
+		default:
 			return "✅ Принят в работу"
 		}
 	case "rejected":
@@ -286,4 +289,143 @@ func (h *Handlers) HandleUnknownCommand(bot BotInterface, chatID int64) {
 		"Используйте кнопки меню или введите /help для справки."
 
 	bot.SendMessage(chatID, message)
+}
+
+// CALLBACK HANDLERS
+
+func (h *Handlers) HandleAcceptOrder(ctx context.Context, bot BotInterface, chatID int64, callbackData string, messageID int64) {
+	orderID, err := h.ExtractOrderID(callbackData)
+	if err != nil {
+		h.log.Error("Failed to extract order ID from callback", "CallbackData", callbackData)
+		bot.SendMessage(chatID, "❌ Ошибка обработки заказа")
+		return
+	}
+
+	h.log.Info("Courier accepting order", "chatID", chatID, "orderID", orderID)
+
+	bot.EditMessageReplyMarkup(chatID, messageID, nil)
+
+	err = h.assignmentService.HandleCourierResponse(ctx, chatID, orderID, true)
+	if err != nil {
+		h.log.Error("Failed to accept order by courier", "orderID", orderID, "chatID", chatID, "error", err)
+		bot.SendMessage(chatID, "❌ Не удалось принять заказ. Попробуйте позже.")
+		return
+	}
+}
+
+func (h *Handlers) HandleRejectOrder(ctx context.Context, bot BotInterface, chatID int64, callbackData string, messageID int64) {
+	orderID, err := h.ExtractOrderID(callbackData)
+	if err != nil {
+		h.log.Error("Failed to extract order ID from callback", "CallbackData", callbackData)
+		bot.SendMessage(chatID, "❌ Ошибка обработки заказа")
+		return
+	}
+
+	h.log.Info("Courier rejecting order", "chatID", chatID, "orderID", orderID)
+
+	bot.EditMessageReplyMarkup(chatID, messageID, nil)
+
+	err = h.assignmentService.HandleCourierResponse(ctx, chatID, orderID, false)
+	if err != nil {
+		h.log.Error("Failed to reject order by courier", "orderID", orderID, "chatID", chatID, "error", err)
+		bot.SendMessage(chatID, "❌ Не удалось отклонить заказ. Попробуйте позже.")
+		return
+	}
+}
+
+func (h *Handlers) HandleCompleteOrder(ctx context.Context, bot BotInterface, chatID int64, callbackData string) {
+	orderID, err := h.ExtractOrderID(callbackData)
+	if err != nil {
+		h.log.Error("Failed to extract order ID from callback", "CallbackData", callbackData)
+		bot.SendMessage(chatID, "❌ Ошибка обработки заказа")
+		return
+	}
+
+	message := fmt.Sprintf(
+		"✅ *Заказ #%d завершен!*\n\n"+
+			"Поздравляем с успешной доставкой!",
+		orderID,
+	)
+
+	bot.SendMessage(chatID, message)
+
+	h.assignmentService.UpdateOrderStatusReceived(ctx, orderID, true)
+	h.log.Info("Order marked as completed by courier", "orderID", orderID, "chatID", chatID)
+}
+
+func (h *Handlers) HandleProblemOrder(bot BotInterface, chatID int64, callbackData string) {
+	orderID, err := h.ExtractOrderID(callbackData)
+	if err != nil {
+		h.log.Error("Failed to extract order ID from callback", "Callback", callbackData)
+		bot.SendMessage(chatID, "❌ Ошибка обработки заказа")
+		return
+	}
+
+	message := fmt.Sprintf(
+		"🚨 *Проблема с заказом #%d*\n\n"+
+			"Выберите тип проблемы:",
+		orderID,
+	)
+
+	keyboard := h.keyboardManager.CreateProblemKeyboard(orderID)
+	bot.SendMessageWithInlineKeyboard(chatID, message, keyboard)
+}
+
+func (h *Handlers) HandleNavigation(bot BotInterface, chatID int64, callbackData string) {
+	parts := strings.Split(callbackData, "_")
+	if len(parts) < 3 {
+		bot.SendMessage(chatID, "❌ Не удалось получить адрес для навигации")
+		return
+	}
+
+	orderID := parts[1]
+	address := strings.Join(parts[2:], " ")
+
+	message := fmt.Sprintf(
+		"🗺️ *Навигация для заказа #%s*\n\n"+
+			"*Адрес:* %s\n\n"+
+			"Откройте приложение навигации для построения маршурута.",
+		orderID,
+		address,
+	)
+
+	bot.SendMessage(chatID, message)
+}
+
+func (h *Handlers) HandleCallCustomer(bot BotInterface, chatID int64, callbackData string) {
+	parts := strings.Split(callbackData, "_")
+	if len(parts) < 3 {
+		bot.SendMessage(chatID, "❌ Не удалось получить номер телефона")
+		return
+	}
+
+	orderID := parts[1]
+	phone := parts[2]
+
+	message := fmt.Sprintf(
+		"📞 *Звонок клиенту заказа #%s*\n\n"+
+			"*Телефон:* `%s`\n\n"+
+			"Нажмите на номер для звонка.",
+		orderID,
+		phone,
+	)
+
+	bot.SendMessage(chatID, message)
+}
+
+// UTILITY METHODS
+
+func (h *Handlers) ExtractOrderID(callbackData string) (int, error) {
+	parts := strings.Split(callbackData, "_")
+	if len(parts) < 2 {
+		return 0, fmt.Errorf("invalid callback data format: %s", callbackData)
+	}
+
+	for i := len(parts) - 1; i >= 0; i-- {
+		if id, err := strconv.Atoi(parts[i]); err == nil {
+			return id, nil
+		}
+	}
+
+	return 0, fmt.Errorf("order ID not found in callback data: %s", callbackData)
 }

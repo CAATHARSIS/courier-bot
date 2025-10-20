@@ -17,7 +17,7 @@ func NewOrderRepository(db *sql.DB) *orderRepository {
 	return &orderRepository{db: db}
 }
 
-func (r *orderRepository) GetByID(ctx context.Context, id int) (*models.Order, error) {
+func (r *orderRepository) GetByID(ctx context.Context, ID int) (*models.Order, error) {
 	query := `
 		SELECT
 			id,
@@ -52,7 +52,7 @@ func (r *orderRepository) GetByID(ctx context.Context, id int) (*models.Order, e
 	`
 
 	var order models.Order
-	err := r.db.QueryRowContext(ctx, query, id).Scan(
+	err := r.db.QueryRowContext(ctx, query, ID).Scan(
 		&order.ID,
 		&order.UserID,
 		&order.Surname,
@@ -200,4 +200,21 @@ func (r *orderRepository) GetActiveOrdersByCourier(ctx context.Context, courierI
 	}
 
 	return orders, nil
+}
+
+func (r *orderRepository) UpdateStatusReceived(ctx context.Context, ID int, received bool) error {
+	query := `
+		UPDATE orders
+		SET
+			is_received = $1
+		WHERE
+			id = $2
+	`
+
+	_, err := r.db.ExecContext(ctx, query, received, ID)
+	if err != nil {
+		return fmt.Errorf("failed to update order status: %v", err)
+	}
+
+	return nil
 }
