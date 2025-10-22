@@ -314,7 +314,7 @@ func (s *Service) GetActiveOrdersByCourier(ctx context.Context, chatID int64) ([
 	return activeOrders, nil
 }
 
-func (s *Service) GetByOrderID(ctx context.Context, orderID int) (*models.OrderAssignment, error) {
+func (s *Service) GetAssignmentByOrderID(ctx context.Context, orderID int) (*models.OrderAssignment, error) {
 	assignment, err := s.repo.OrderAssignment.GetByOrderID(ctx, orderID)
 	if err != nil {
 		return nil, err
@@ -323,6 +323,14 @@ func (s *Service) GetByOrderID(ctx context.Context, orderID int) (*models.OrderA
 	return assignment, nil
 }
 
-func (s *Service) UpdateOrderStatusReceived(ctx context.Context, ID int, received bool) error {
-	return s.repo.Order.UpdateStatusReceived(ctx, ID, received)
+func (s *Service) UpdateOrderStatusReceived(ctx context.Context, id int, received bool) error {
+	return s.repo.Order.UpdateStatusReceived(ctx, id, received)
+}
+
+func (s *Service) GetOrderByID(ctx context.Context, id int) (*models.Order, error) {
+	return s.repo.Order.GetByID(ctx, id)
+}
+
+func (s *Service) GetCourierByChatID(ctx context.Context, chatID int64) (*models.Courier, error) {
+	return s.repo.Courier.GetByChatID(ctx, chatID)
 }

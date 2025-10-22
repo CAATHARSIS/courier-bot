@@ -50,8 +50,8 @@ type KeyboardManagerInterface interface {
 }
 
 type HandlersInterface interface {
-	HandleMessage(bot BotInterface, update tgbotapi.Update)
-	HandleCallback(bot BotInterface, update tgbotapi.Update)
+	HandleMessage(ctx context.Context, bot BotInterface, update tgbotapi.Update)
+	HandleCallback(ctx context.Context, bot BotInterface, update tgbotapi.Update)
 
 	HandleStartCommand(bot BotInterface, chatID int64, user *tgbotapi.User)
 	HandleHelpCommand(bot BotInterface, chatID int64)
@@ -66,13 +66,16 @@ type HandlersInterface interface {
 	HandleProblemOrder(bot BotInterface, chatID int64, callbackData string)
 	HandleNavigation(bot BotInterface, chatID int64, callbackData string)
 	HanldeCallCustomeer(bot BotInterface, chatID int64, callbackData string)
-	HandleStatusUpdate(bot BotInterface, chatID int64, callbackData string)
+
+	HandleStatusUpdate(ctx context.Context, bot BotInterface, chatID int64, callbackData string)
 	HanldeSettings(bot BotInterface, chatID int64, callbackData string)
 	HandleConfirmation(bot BotInterface, chatID int64, callbackData string)
-	HanldeRefresh(bot BotInterface, chatID int64, callbackData string)
+	HanldeRefresh(ctx context.Context, bot BotInterface, chatID int64, callbackData string)
 	HandleMenu(bot BotInterface, chatID int64, callbackData string)
-	HandleOrderDetails(bot BotInterface, chatID int64, callbackData string)
-	HandleBackToOrder(bot BotInterface, chatID int64, callbackData string)
+	HandleOrderDetails(ctx context.Context, bot BotInterface, chatID int64, callbackData string)
+	HandleBackToOrder(ctx context.Context, bot BotInterface, chatID int64, callbackData string)
+	HandleDeliveryConfirmation(ctx context.Context, bot BotInterface, chatID int64, callbackData string)
+	HandleDeliveryCancel(ctx context.Context, bot BotInterface, chatID int64, callbackData string)
 	HandleUnknownCallback(bot BotInterface, chatID int64, callbackData string)
 
 	ExtractOrderID(callbackData string) (int, error)
@@ -86,14 +89,16 @@ const (
 	ActionProblem  = "problem"
 
 	// Utility Actions
-	ActionNavigate = "nav"
-	ActionCall     = "call"
-	ActionStatus   = "status"
-	ActionSettings = "settings"
-	ActionConfirm  = "confirm"
-	ActionCancel   = "cancel"
-	ActionRefresh  = "refresh"
-	ActionMenu     = "menu"
+	ActionNavigate        = "nav"
+	ActionCall            = "call"
+	ActionStatus          = "status"
+	ActionSettings        = "settings"
+	ActionConfirm         = "confirm"
+	ActionCancel          = "cancel"
+	ActionRefresh         = "refresh"
+	ActionMenu            = "menu"
+	ActionConfirmDelivery = "confirm_delivery"
+	ActionCancelDelivery  = "cancel_delivery"
 
 	// Sub-actions
 	ActionOrderDetails = "order_details"
