@@ -17,13 +17,6 @@ type BotInterface interface {
 	AnswerCallbackQuery(callbackQueryID string) error
 	AnswerCallbackQueryWithText(callbackQueryID, text string) error
 
-	SendPhoto(chatID int64, photoURL string, caption string) error
-	SendLocation(chatID int64, latitude, longitude float64) (*tgbotapi.ChatMember, error)
-
-	GetChat(chatID int64) (*tgbotapi.Chat, error)
-	GetChatMember(chatID int64, userID int64) (*tgbotapi.ChatMember, error)
-
-	SetMyCommands(commands []tgbotapi.BotCommand) error
 	GetMe() (*tgbotapi.User, error)
 	TestConnection() error
 

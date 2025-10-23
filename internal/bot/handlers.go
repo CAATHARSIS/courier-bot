@@ -42,11 +42,11 @@ func (h *Handlers) HandleMessage(ctx context.Context, bot BotInterface, update t
 		h.HandleStartCommand(bot, chatID, update.Message.From)
 	case "/help", "🆘 Помощь":
 		h.HandleHelpCommand(bot, chatID)
-	case "📋 Мои заказы":
+	case "/orders", "📋 Мои заказы":
 		h.HandleMyOrdersCommand(ctx, bot, chatID)
-	case "ℹ️ Статус":
+	case "/status", "ℹ️ Статус":
 		h.HandleStatusCommand(bot, chatID)
-	case "⚙️ Настройки":
+	case "/settings", "⚙️ Настройки":
 		h.HandleSettingsCommand(bot, chatID)
 	default:
 		h.HandleUnknownCommand(bot, chatID)
