@@ -10,14 +10,14 @@ import (
 	_ "github.com/golang-migrate/migrate/v4/source/file"
 )
 
-func RunMigrations(db *sql.DB, log slog.Logger) error {
+func RunMigrations(db *sql.DB, log *slog.Logger) error {
 	driver, err := postgres.WithInstance(db, &postgres.Config{})
 	if err != nil {
 		return fmt.Errorf("failed to create migration runner: %v", err)
 	}
 
 	m, err := migrate.NewWithDatabaseInstance(
-		"file://migrations",
+		"file://../../migrations",
 		"postgres",
 		driver,
 	)

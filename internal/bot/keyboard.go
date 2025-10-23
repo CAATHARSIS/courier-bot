@@ -36,7 +36,7 @@ func (km *KeyboardManager) CreateDeliveryKeyboard(orderID int, address, phone st
 
 	if address != "" {
 		navigationRow := tgbotapi.NewInlineKeyboardRow(
-			tgbotapi.NewInlineKeyboardButtonData("🗺️ Построить маршрут", fmt.Sprintf("nav_%d_%s", orderID, km.escapeCallbackData(address))),
+			tgbotapi.NewInlineKeyboardButtonData("🗺️ Построить маршрут", fmt.Sprintf("nav_%d_%s", orderID, km.EscapeCallbackData(address))),
 		)
 		rows = append(rows, navigationRow)
 	}
@@ -90,7 +90,7 @@ func (km *KeyboardManager) CreateSettingsKeyboard() tgbotapi.InlineKeyboardMarku
 			tgbotapi.NewInlineKeyboardButtonData("Режим работы", "settings_workmode"),
 		),
 		tgbotapi.NewInlineKeyboardRow(
-			tgbotapi.NewInlineKeyboardButtonData("Контакты", "seetings_contacts"),
+			tgbotapi.NewInlineKeyboardButtonData("Контакты", "settings_contacts"),
 			tgbotapi.NewInlineKeyboardButtonData("↩️ Назад", "menu_main"),
 		),
 	)
@@ -184,7 +184,7 @@ func (km *KeyboardManager) ParseCallbackData(callbackData string) (action string
 
 // escapeCallbackData экранирует данные для callback_data
 // В Telegram callback_data не может превышать 64 байта и содержать некоторые символы
-func (km *KeyboardManager) escapeCallbackData(data string) string {
+func (km *KeyboardManager) EscapeCallbackData(data string) string {
 	if len(data) > 50 {
 		data = data[:50]
 	}

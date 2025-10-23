@@ -196,7 +196,7 @@ func (s *NotificationService) createDeliveryKeyboard(address, phone string) tgbo
 	return tgbotapi.NewInlineKeyboardMarkup(rows...)
 }
 
-func (s *NotificationService) SendSimpleMessage(chatID int64, message string) error {
+func (s *NotificationService) SendMessage(chatID int64, message string) error {
 	return s.sendSimpleMessage(chatID, message)
 }
 

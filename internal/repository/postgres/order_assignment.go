@@ -21,7 +21,7 @@ func NewOrderAssignmentRepository(db *sql.DB) interfaces.OrderAssignment {
 func (r *orderAssignmentRepository) Create(ctx context.Context, orderAssignment *models.OrderAssignment) error {
 	query := `
 		INSERT INTO
-			order_assignmeents (
+			order_assignments (
 				order_id,
 				courier_id,
 				assigned_at,
@@ -57,8 +57,8 @@ func (r *orderAssignmentRepository) GetByID(ctx context.Context, id int) (*model
 			id,
 			order_id,
 			courier_id,
-			assigned_id,
-			expired_id,
+			assigned_at,
+			expired_at,
 			courier_response_status
 		FROM
 			order_assignments

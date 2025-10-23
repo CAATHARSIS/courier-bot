@@ -13,14 +13,16 @@ type Config struct {
 	DBUser           string
 	DBPassword       string
 	DBName           string
+	WebhookSecret    string
 	TelegramBotToken string
+	HTTPAddr         string
 	Env              string
 }
 
-func Load(log slog.Logger) *Config {
-	err := godotenv.Load()
+func Load() *Config {
+	err := godotenv.Load("../../.env")
 	if err != nil {
-		log.Warn("Warning: .env file not found")
+		slog.Warn("Warning: .env file not found")
 	}
 
 	return &Config{
@@ -29,7 +31,9 @@ func Load(log slog.Logger) *Config {
 		DBUser:           getEnv("DB_USER", "postgres"),
 		DBPassword:       getEnv("DB_PASSWORD", "postgres"),
 		DBName:           getEnv("DB_NAME", "courier-bot"),
+		WebhookSecret:    getEnv("WEBHOOK_SECRET", ""),
 		TelegramBotToken: getEnv("TELEGRAM_BOT_TOKEN", ""),
+		HTTPAddr:         getEnv("HTTP_ADDR", ":8080"),
 		Env:              getEnv("ENV", "local"),
 	}
 }

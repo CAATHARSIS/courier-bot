@@ -57,7 +57,7 @@ func (b *TelegramBot) SendMessage(chatID int64, text string) error {
 
 func (b *TelegramBot) SendMessageWithKeyboard(chatID int64, text string, keyboard tgbotapi.ReplyKeyboardMarkup) error {
 	msg := tgbotapi.NewMessage(chatID, text)
-	msg.ParseMode = "Makrdown"
+	msg.ParseMode = "Markdown"
 	msg.ReplyMarkup = keyboard
 	_, err := b.api.Send(msg)
 	return err

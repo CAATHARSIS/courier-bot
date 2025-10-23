@@ -25,9 +25,10 @@ type Notification struct {
 	WithButtons   bool
 }
 
-func NewService(repo repository.Repository, notificationSender NotificationSender) *Service {
+func NewService(repo repository.Repository, notificationSender NotificationSender, log *slog.Logger) *Service {
 	service := &Service{
 		repo:               repo,
+		log:                log,
 		notificationSender: notificationSender,
 		assignmentTimeout:  10 * time.Minute,
 	}
@@ -245,18 +246,18 @@ func (s *Service) startAssignmentTimer(ctx context.Context, orderID int, expiry 
 }
 
 func (s *Service) sendNotification(chatID int64, orderID int, message string) error {
-	buttons := []Button{
-		{
-			Text: "✅ Принять",
-			Data: fmt.Sprintf("accepted_%d", orderID),
-		},
-		{
-			Text: "❌ Отклонить",
-			Data: fmt.Sprintf("rejected_%d", orderID),
-		},
-	}
+	// buttons := []Button{
+	// 	{
+	// 		Text: "✅ Принять",
+	// 		Data: fmt.Sprintf("accepted_%d", orderID),
+	// 	},
+	// 	{
+	// 		Text: "❌ Отклонить",
+	// 		Data: fmt.Sprintf("rejected_%d", orderID),
+	// 	},
+	// }
 
-	err := s.notificationSender.SendMessageWithKeyboard(chatID, message, orderID, buttons)
+	err := s.notificationSender.SendMessageWithKeyboard(chatID, message, orderID)
 	if err != nil {
 		s.log.Error("Failed to send notification to courier for order", "chatID", chatID, "orderID", orderID)
 		return err
@@ -267,7 +268,7 @@ func (s *Service) sendNotification(chatID int64, orderID int, message string) er
 }
 
 func (s *Service) sendSimpleNotification(chatID int64, message string) error {
-	err := s.notificationSender.SendMessage(chatID, message, 0)
+	err := s.notificationSender.SendMessage(chatID, message)
 	if err != nil {
 		s.log.Error("Failed to send simple notification", "error", err)
 		return err

@@ -59,12 +59,27 @@ func (h *Handlers) HandleCallback(ctx context.Context, bot BotInterface, update 
 	}
 
 	callback := update.CallbackQuery
-	chatID := update.Message.Chat.ID
+
+	var chatID int64
+	if callback.Message != nil {
+		chatID = callback.Message.Chat.ID
+	} else {
+		chatID = callback.From.ID
+		h.log.Warn("Callback without message, usting user ID as chatID", "userID", callback.From.ID, "callbackData", callback.Data)
+	}
+
 	callbackData := callback.Data
 
-	h.log.Info("Received callback", "chatID", chatID, "callbackData", callbackData)
+	h.log.Info("Received callback", "chatID", chatID, "callbackData", callbackData, "messageID", callback.Message.MessageID)
 
-	bot.AnswerCallbackQuery(callback.ID)
+	if bot == nil {
+		h.log.Error("Bot interface is nil in callback handler")
+		return
+	}
+	
+	if err := bot.AnswerCallbackQuery(callback.ID); err != nil {
+		h.log.Error("Failed to answer callback query", "error", err)
+	}
 
 	action := h.keyboardManager.GetActionFromCallback(callbackData)
 
@@ -174,7 +189,7 @@ func (h *Handlers) HandleStatusCommand(bot BotInterface, chatID int64) {
 		"• 📱 Статус: *Активен*\n" +
 		"• 🚗 Доступен для заказов: *Да*\n" +
 		"• 📊 Заказов сегодня: *0*\n" +
-		"• ⭐ Рейтинг: *Новый курьер*\n\n" +
+		"• ⭐ Рейтинг: *Ты заглушечка*\n\n" +
 		"Вы готовы принимать новые заказы! 🚀"
 
 	bot.SendMessage(chatID, message)
@@ -364,11 +379,11 @@ func (h *Handlers) HandleStatusUpdate(ctx context.Context, bot BotInterface, cha
 func (h *Handlers) HandleSettings(bot BotInterface, chatID int64, callbackData string) {
 	switch callbackData {
 	case SettingsNotifications:
-		bot.SendMessage(chatID, "🔔 Настройки уведомлений...")
+		bot.SendMessage(chatID, "🔔 Настройки уведомлений...\nУбрать может э")
 	case SettingsWorkmode:
-		bot.SendMessage(chatID, "Настройки режима работы...")
+		bot.SendMessage(chatID, "Настройки режима работы...\nУбрать может э")
 	case SettingsContacts:
-		bot.SendMessage(chatID, "Контактная информация...")
+		bot.SendMessage(chatID, "Контактная информация...\nУбрать может э")
 	default:
 		h.HandleSettingsCommand(bot, chatID)
 	}

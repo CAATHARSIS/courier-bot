@@ -29,14 +29,13 @@ type KeyboardManagerInterface interface {
 	CreateStatusKeyboard(orderID int) tgbotapi.InlineKeyboardMarkup
 	CreateMainMenuKeyboard() tgbotapi.ReplyKeyboardMarkup
 	CreateSettingsKeyboard() tgbotapi.InlineKeyboardMarkup
-	CreateConfirmationKeyboard(action string, id int) tgbotapi.InlineKeyboardMarkup
+	CreateConfirmationKeyboard(action string, data interface{}) tgbotapi.InlineKeyboardMarkup
 	CreateOrderListKeyboard(orders []OrderListItem) tgbotapi.InlineKeyboardMarkup
 	CreateProblemKeyboard(orderID int) tgbotapi.InlineKeyboardMarkup
 	CreateYesNoKeyboard(action string, id int) tgbotapi.InlineKeyboardMarkup
 	RemoveKeyboard() tgbotapi.ReplyKeyboardRemove
 
 	GetActionFromCallback(callbackData string) string
-	GetSubActionFromCallback(callbackData string) string
 	ParseCallbackData(callbackData string) (action string, id int, err error)
 
 	EscapeCallbackData(data string) string
