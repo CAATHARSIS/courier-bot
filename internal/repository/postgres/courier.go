@@ -369,7 +369,7 @@ func (r *courierRepository) CheckCourierByChatID(ctx context.Context, chatID int
 				couriers
 			WHERE
 				chat_id = $1
-		) res
+		) exists
 	`
 
 	var exists bool

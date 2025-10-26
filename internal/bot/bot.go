@@ -7,6 +7,8 @@ import (
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
 
+const ParseMode = "Markdown"
+
 type TelegramBot struct {
 	api      *tgbotapi.BotAPI
 	handlers *Handlers
@@ -50,14 +52,14 @@ func (b *TelegramBot) handleUpdate(ctx context.Context, update tgbotapi.Update) 
 
 func (b *TelegramBot) SendMessage(chatID int64, text string) error {
 	msg := tgbotapi.NewMessage(chatID, text)
-	msg.ParseMode = "Markdown"
+	msg.ParseMode = ParseMode
 	_, err := b.api.Send(msg)
 	return err
 }
 
 func (b *TelegramBot) SendMessageWithKeyboard(chatID int64, text string, keyboard tgbotapi.ReplyKeyboardMarkup) error {
 	msg := tgbotapi.NewMessage(chatID, text)
-	msg.ParseMode = "Markdown"
+	msg.ParseMode = ParseMode
 	msg.ReplyMarkup = keyboard
 	_, err := b.api.Send(msg)
 	return err
@@ -65,7 +67,7 @@ func (b *TelegramBot) SendMessageWithKeyboard(chatID int64, text string, keyboar
 
 func (b *TelegramBot) SendMessageWithInlineKeyboard(chatID int64, text string, keyboard tgbotapi.InlineKeyboardMarkup) error {
 	msg := tgbotapi.NewMessage(chatID, text)
-	msg.ParseMode = "Markdown"
+	msg.ParseMode = ParseMode
 	msg.ReplyMarkup = keyboard
 	_, err := b.api.Send(msg)
 	return err
@@ -73,7 +75,7 @@ func (b *TelegramBot) SendMessageWithInlineKeyboard(chatID int64, text string, k
 
 func (b *TelegramBot) EditMessageText(chatID int64, messageID int64, text string) error {
 	editMsg := tgbotapi.NewEditMessageText(chatID, int(messageID), text)
-	editMsg.ParseMode = "Markdown"
+	editMsg.ParseMode = ParseMode
 	_, err := b.api.Send(editMsg)
 	return err
 }

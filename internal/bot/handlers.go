@@ -124,7 +124,7 @@ func (h *Handlers) HandleCallback(ctx context.Context, bot BotInterface, update 
 func (h *Handlers) HandleStartCommand(bot BotInterface, chatID int64, user *tgbotapi.User) {
 	var message string
 
-	if h.assignmentService.CheckCourierByChatID(context.Background(), chatID) {
+	if !h.assignmentService.CheckCourierByChatID(context.Background(), chatID) {
 		newCourier := &models.Courier{
 			TelegramID: user.ID,
 			ChatID:     chatID,
@@ -138,7 +138,6 @@ func (h *Handlers) HandleStartCommand(bot BotInterface, chatID int64, user *tgbo
 		message = fmt.Sprintf(
 			"Добро пожаловать, %s!\n\n"+
 				"Вы успешно зарегестрированы как курьер.\n"+
-				"Ожидайте уведомлений о новых заказах\n"+
 				"Я - бот для курьеров доставки. Буду сопровождать вас в вашей работе.\n\n"+
 				"*Основные команды:*\n"+
 				"• 📋 Мои заказы - посмотреть активные заказы\n"+
