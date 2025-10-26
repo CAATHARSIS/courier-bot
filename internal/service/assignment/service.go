@@ -335,3 +335,11 @@ func (s *Service) GetOrderByID(ctx context.Context, id int) (*models.Order, erro
 func (s *Service) GetCourierByChatID(ctx context.Context, chatID int64) (*models.Courier, error) {
 	return s.repo.Courier.GetByChatID(ctx, chatID)
 }
+
+func (s *Service) CheckCourierByChatID(ctx context.Context, chatID int64) bool {
+	return s.repo.Courier.CheckCourierByChatID(ctx, chatID)
+}
+
+func (s *Service) CreateCourier(ctx context.Context, courier *models.Courier) error {
+	return s.repo.Courier.Create(ctx, courier)
+}

@@ -360,3 +360,20 @@ func (r *courierRepository) GetByChatID(ctx context.Context, chatID int64) (*mod
 
 	return &courier, nil
 }
+
+func (r *courierRepository) CheckCourierByChatID(ctx context.Context, chatID int64) bool {
+	query := `
+		SELECT EXISTS (
+			SELECT 1
+			FROM
+				couriers
+			WHERE
+				chat_id = $1
+		) res
+	`
+
+	var exists bool
+	r.db.QueryRowContext(ctx, query, chatID).Scan(&exists)
+
+	return exists
+}
