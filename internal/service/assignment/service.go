@@ -203,7 +203,7 @@ func (s *Service) formatAssignmentMessage(order *models.Order) string {
 			"*Адрес доставки:*\n%s, %s\n"+
 			"*Квартира:*\n%s\n"+
 			"*Подъезд:\n%s\n"+
-			"*Клиент:*\n%s %s\n"+
+			"*Клиент:*\n%s\n"+
 			"*Телефон:*\n%s\n"+
 			"*Сумма заказа:*\n%d\n\n"+
 			"*Стоимость доставки:*\n%d\n\n"+
@@ -211,7 +211,7 @@ func (s *Service) formatAssignmentMessage(order *models.Order) string {
 		order.Address, order.City,
 		order.Flat,
 		order.Entrance,
-		order.Surname, order.Name,
+		order.Name,
 		order.PhoneNumber,
 		order.FinalPrice,
 		order.DeliveryPrice,

@@ -5,7 +5,6 @@ import "time"
 type Order struct {
 	ID                     int        `json:"id"`
 	UserID                 int        `json:"user_id"`
-	Surname                string     `json:"surname"`
 	Name                   string     `json:"name"`
 	PhoneNumber            string     `json:"phone_number"`
 	City                   string     `json:"city"`

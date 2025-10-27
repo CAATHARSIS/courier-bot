@@ -22,7 +22,6 @@ func (r *orderRepository) GetByID(ctx context.Context, id int) (*models.Order, e
 		SELECT
 			id,
 			user_id,
-			surname,
 			name,
 			phone_number,
 			city,
@@ -55,7 +54,6 @@ func (r *orderRepository) GetByID(ctx context.Context, id int) (*models.Order, e
 	err := r.db.QueryRowContext(ctx, query, id).Scan(
 		&order.ID,
 		&order.UserID,
-		&order.Surname,
 		&order.Name,
 		&order.PhoneNumber,
 		&order.City,
@@ -164,7 +162,6 @@ func (r *orderRepository) GetActiveOrdersByCourier(ctx context.Context, courierI
 		err := rows.Scan(
 			&order.ID,
 			&order.UserID,
-			&order.Surname,
 			&order.Name,
 			&order.PhoneNumber,
 			&order.City,

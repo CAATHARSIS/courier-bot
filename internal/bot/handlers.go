@@ -446,14 +446,14 @@ func (h *Handlers) HandleOrderDetails(ctx context.Context, bot BotInterface, cha
 		"📋 *Детали заказа #%d*\n\n"+
 			"*Статус:* %s\n"+
 			"*Адрес:* %s %s\n"+
-			"*Клиент:* %s %s\n"+
+			"*Клиент:* %s\n"+
 			"*Телефон:* %s\n"+
 			"*Дата доставки:* %s\n\n"+
 			"Используйте кнопки ниже для управления доставкой:",
 		orderID,
 		h.determineOrderStatus(ctx, *order),
 		order.City, order.Address,
-		order.Surname, order.Name,
+		order.Name,
 		order.PhoneNumber,
 		order.DeliveryDate,
 	)
@@ -534,12 +534,12 @@ func (h *Handlers) handleOrderPicked(bot BotInterface, chatID int64, orderID int
 			"✅ Вы успешно забрали заказ у ресторана.\n\n"+
 			"*Информация о заказе:*\n"+
 			"• Адрес доставки: %s, %s\n"+
-			"• Клиент: %s %s\n"+
+			"• Клиент: %s\n"+
 			"• Телефон: `%s`\n\n"+
 			"🚗 Теперь можете начать доставку к клиенту.",
 		orderID,
 		order.Address, order.City,
-		order.Surname, order.Name,
+		order.Name,
 		order.PhoneNumber,
 	)
 
@@ -586,10 +586,10 @@ func (h *Handlers) handleOrderArrived(bot BotInterface, chatID int64, orderID in
 			"2. ✅ Передайте заказ\n"+
 			"3. 💰 Примите оплату (если необходимо)\n"+
 			"4. 🏁 Подтвердите доставку\n\n"+
-			"Клиент: %s %s\n"+
+			"Клиент: %s\n"+
 			"Телефон: `%s`",
 		orderID,
-		order.Surname, order.Name,
+		order.Name,
 		order.PhoneNumber,
 	)
 
