@@ -5,32 +5,27 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"strings"
 	"time"
 
 	"github.com/CAATHARSIS/courier-bot/internal/models"
 	"github.com/CAATHARSIS/courier-bot/internal/repository"
+	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
 
 type Service struct {
-	repo               repository.Repository
-	log                *slog.Logger
-	notificationSender NotificationSender
-	assignmentTimeout  time.Duration
+	repo              repository.Repository
+	log               *slog.Logger
+	botAPI            *tgbotapi.BotAPI
+	assignmentTimeout time.Duration
 }
 
-type Notification struct {
-	CourierChatID int64
-	OrderID       int
-	Message       string
-	WithButtons   bool
-}
-
-func NewService(repo repository.Repository, notificationSender NotificationSender, log *slog.Logger) *Service {
+func NewService(repo repository.Repository, botAPI *tgbotapi.BotAPI, log *slog.Logger) *Service {
 	service := &Service{
-		repo:               repo,
-		log:                log,
-		notificationSender: notificationSender,
-		assignmentTimeout:  10 * time.Minute,
+		repo:              repo,
+		log:               log,
+		botAPI:            botAPI,
+		assignmentTimeout: 10 * time.Minute,
 	}
 
 	return service
@@ -89,6 +84,10 @@ func (s *Service) HandleCourierResponse(ctx context.Context, chatID int64, order
 			return fmt.Errorf("failed to update order: %v", err)
 		}
 		s.log.Info("Order ACCEPTED by courier", "orderID", orderID, "courierID", courier.ID)
+
+		s.repo.Courier.UpdateCurrentOrderID(ctx, chatID, orderID)
+
+		go s.sendDeliveryDetails(ctx, chatID, orderID)
 	} else {
 		s.log.Info("Order REJECTED by courier", "orderID", orderID, "courierID", courier.ID)
 
@@ -97,9 +96,9 @@ func (s *Service) HandleCourierResponse(ctx context.Context, chatID int64, order
 
 	var responseMessage string
 	if accepted {
-		responseMessage = "✅ Заказ принят! Ожидайте детали доставки."
+		responseMessage = fmt.Sprintf("✅ Заказ #%d принят! Ожидайте детали доставки.", orderID)
 	} else {
-		responseMessage = "❌ Вы отказались от заказа."
+		responseMessage = fmt.Sprintf("❌ Вы отказались от заказа #%d.", orderID)
 	}
 
 	if err := s.sendSimpleNotification(chatID, responseMessage); err != nil {
@@ -142,8 +141,11 @@ func (s *Service) assignOrderToCourier(ctx context.Context, orderID, courierID i
 		return nil, fmt.Errorf("failed to create assignment: %v", err)
 	}
 
-	message := s.formatAssignmentMessage(order)
-	if err := s.sendNotification(courier.ChatID, orderID, message); err != nil {
+	message := s.formatDeliveryMessage(order)
+	message.WriteString("⏰ *У вас 10 минут, чтобы принять решение*\n\n")
+	message.WriteString("Примите или отколните заказ:")
+
+	if err := s.sendNotificationWithKeyboard(courier.ChatID, orderID, message.String()); err != nil {
 		s.log.Error("Failed to send notification to courier", "courierID", courier.ID, "error", err)
 	}
 
@@ -184,8 +186,6 @@ func (s *Service) findAndAssignCourier(ctx context.Context, orderID int) (*Assig
 
 	for _, courier := range couriers {
 		if !rejectedMap[courier.ID] {
-			s.log.Info("Assigning order to courier", "orderID", orderID, "couierID", courier.ID)
-
 			return s.assignOrderToCourier(ctx, orderID, courier.ID)
 		}
 	}
@@ -197,26 +197,37 @@ func (s *Service) findAndAssignCourier(ctx context.Context, orderID int) (*Assig
 	}, nil
 }
 
-func (s *Service) formatAssignmentMessage(order *models.Order) string {
-	res := fmt.Sprintf(
-		"*Новый заказ!*\n\n"+
-			"*Адрес доставки:*\n%s, %s\n"+
-			"*Квартира:*\n%s\n"+
-			"*Подъезд:\n%s\n"+
-			"*Клиент:*\n%s\n"+
-			"*Телефон:*\n%s\n"+
-			"*Сумма заказа:*\n%d\n\n"+
-			"*Стоимость доставки:*\n%d\n\n"+
-			"Примите или отколните заказ:",
-		order.Address, order.City,
-		order.Flat,
-		order.Entrance,
-		order.Name,
-		order.PhoneNumber,
-		order.FinalPrice,
-		order.DeliveryPrice,
-	)
-	return res
+func (s *Service) formatDeliveryMessage(order *models.Order) *strings.Builder {
+	var builder strings.Builder
+
+	builder.WriteString("*Новый заказ!*\n\n")
+	builder.WriteString(fmt.Sprintf("*Адрес доставки:*\n%s, %s\n", order.Address, order.City))
+
+	hasFlat := order.Flat.Valid && order.Flat.String != ""
+	hasEntrance := order.Entrance.Valid && order.Entrance.String != ""
+
+	if hasFlat {
+		builder.WriteString(fmt.Sprintf("*Квартира:*\n%s\n", order.Flat.String))
+	}
+
+	if hasEntrance {
+		builder.WriteString(fmt.Sprintf("*Подъезд:*\n%s\n", order.Entrance.String))
+	}
+
+	builder.WriteString(fmt.Sprintf("*Клиент:*\n%s\n", order.Name))
+	builder.WriteString(fmt.Sprintf("*Телефон:*\n%s\n", order.PhoneNumber))
+	builder.WriteString(fmt.Sprintf("*Сумма заказа:*\n%d\n\n", order.FinalPrice))
+	builder.WriteString(fmt.Sprintf("*Стоимость доставки:*\n%d\n\n", order.DeliveryPrice))
+
+	if hasFlat && !hasEntrance {
+		builder.WriteString("*Подъезд не указан, для уточнения информации свяжитесь с клиентом\n\n*")
+	} else if hasEntrance && !hasFlat {
+		builder.WriteString("*Квартира не указана, для уточнения информации свяжитесь с клиентом\n\n*")
+	} else {
+		builder.WriteString("*Квартира и подъезд не указаны, для уточнения информации свяжитесь с клиентом\n\n*")
+	}
+
+	return &builder
 }
 
 func (s *Service) startAssignmentTimer(ctx context.Context, orderID int, expiry time.Time) {
@@ -245,36 +256,78 @@ func (s *Service) startAssignmentTimer(ctx context.Context, orderID int, expiry 
 	}
 }
 
-func (s *Service) sendNotification(chatID int64, orderID int, message string) error {
-	// buttons := []Button{
-	// 	{
-	// 		Text: "✅ Принять",
-	// 		Data: fmt.Sprintf("accepted_%d", orderID),
-	// 	},
-	// 	{
-	// 		Text: "❌ Отклонить",
-	// 		Data: fmt.Sprintf("rejected_%d", orderID),
-	// 	},
-	// }
+func (s *Service) sendNotificationWithKeyboard(chatID int64, orderID int, message string) error {
+	msg := tgbotapi.NewMessage(chatID, message)
+	msg.ParseMode = "Markdown"
 
-	err := s.notificationSender.SendMessageWithKeyboard(chatID, message, orderID)
+	keyboard := tgbotapi.NewInlineKeyboardMarkup(
+		tgbotapi.NewInlineKeyboardRow(
+			tgbotapi.NewInlineKeyboardButtonData("✅ Принять", fmt.Sprintf("accept_%d", orderID)),
+			tgbotapi.NewInlineKeyboardButtonData("❌ Отклонить", fmt.Sprintf("reject_%d", orderID)),
+		),
+	)
+	msg.ReplyMarkup = keyboard
+
+	_, err := s.botAPI.Send(msg)
 	if err != nil {
-		s.log.Error("Failed to send notification to courier for order", "chatID", chatID, "orderID", orderID)
+		s.log.Error("Failed to send message with keyboard", "chatID", chatID, "error", err)
 		return err
 	}
 
-	s.log.Info("Notification sent to courier for order", "chatID", chatID, "orderID", orderID)
+	s.log.Info("Message with keyboard sent", "chatID", chatID, "orderID", orderID)
+	return nil
+}
+
+func (s *Service) sendNotificationWithDeliveryKeyboard(chatID int64, message string, orderID int, order *models.Order) error {
+	msg := tgbotapi.NewMessage(chatID, message)
+	msg.ParseMode = "Markdown"
+
+	keyboard := tgbotapi.NewInlineKeyboardMarkup(
+		tgbotapi.NewInlineKeyboardRow(
+			tgbotapi.NewInlineKeyboardButtonData("🗺️ Маршрут", fmt.Sprintf("nav_%d_%s", orderID, s.escapeAddress(order.Address))),
+			tgbotapi.NewInlineKeyboardButtonData("📞 Позвонить", fmt.Sprintf("call_%d_%s", orderID, order.PhoneNumber)),
+		),
+		tgbotapi.NewInlineKeyboardRow(
+			tgbotapi.NewInlineKeyboardButtonData("✅ Доставлено", fmt.Sprintf("complete_%d", orderID)),
+			tgbotapi.NewInlineKeyboardButtonData("🚨 Проблема", fmt.Sprintf("problem_%d", orderID)),
+		),
+	)
+	msg.ReplyMarkup = keyboard
+
+	_, err := s.botAPI.Send(msg)
+	if err != nil {
+		s.log.Error("Failed to send delivery details", "chatID", chatID, "error", err)
+		return err
+	}
+
+	s.log.Info("Delivery Details sent", "chatID", chatID, "orderID", orderID)
 	return nil
 }
 
 func (s *Service) sendSimpleNotification(chatID int64, message string) error {
-	err := s.notificationSender.SendMessage(chatID, message)
+	msg := tgbotapi.NewMessage(chatID, message)
+	msg.ParseMode = "Markdown"
+
+	_, err := s.botAPI.Send(msg)
 	if err != nil {
-		s.log.Error("Failed to send simple notification", "error", err)
+		s.log.Error("Failed to send message to courier", "chatID", chatID, "error", err)
 		return err
 	}
 
 	return nil
+}
+
+func (s *Service) sendDeliveryDetails(ctx context.Context, chatID int64, orderID int) error {
+	order, err := s.repo.Order.GetByID(ctx, orderID)
+	if err != nil {
+		s.log.Error("Failed to get order for delivery details", "orderID", orderID, "error", err)
+		return err
+	}
+
+	message := s.formatDeliveryMessage(order)
+	message.WriteString("*Используйте кнопки ниже для управления доставкой*")
+
+	return s.sendNotificationWithDeliveryKeyboard(chatID, message.String(), orderID, order)
 }
 
 func (s *Service) validateOrderForAssignment(order *models.Order) error {
@@ -282,7 +335,7 @@ func (s *Service) validateOrderForAssignment(order *models.Order) error {
 		return errors.New("order is not paid")
 	}
 
-	if !order.IsAssembled {
+	if order.IsAssembled.Valid && order.IsAssembled.Bool == false {
 		return errors.New("order is not assembled")
 	}
 
@@ -290,11 +343,21 @@ func (s *Service) validateOrderForAssignment(order *models.Order) error {
 		return fmt.Errorf("order already assigned to courier %d", *order.CourierID)
 	}
 
-	if order.DeliveryDate == nil {
-		return fmt.Errorf("order has no delivery date")
-	}
-
 	return nil
+}
+
+func (s *Service) formatDeliveryTime(deliveryTime *time.Time) string {
+	if deliveryTime == nil {
+		return "не указано"
+	}
+	return deliveryTime.Format("02.01.2006 в 15:04")
+}
+
+func (s *Service) escapeAddress(address string) string {
+	if len(address) > 50 {
+		address = address[:50]
+	}
+	return address
 }
 
 func (s *Service) UpdateAssignmentTimeout(timeout time.Duration) {
@@ -333,7 +396,11 @@ func (s *Service) GetOrderByID(ctx context.Context, id int) (*models.Order, erro
 }
 
 func (s *Service) GetCourierByChatID(ctx context.Context, chatID int64) (*models.Courier, error) {
-	return s.repo.Courier.GetByChatID(ctx, chatID)
+	courier, err := s.repo.Courier.GetByChatID(ctx, chatID)
+	if err != nil {
+		s.log.Error("Failed to get courier by chat ID", "Error", err)
+	}
+	return courier, err
 }
 
 func (s *Service) CheckCourierByChatID(ctx context.Context, chatID int64) bool {
@@ -342,4 +409,12 @@ func (s *Service) CheckCourierByChatID(ctx context.Context, chatID int64) bool {
 
 func (s *Service) CreateCourier(ctx context.Context, courier *models.Courier) error {
 	return s.repo.Courier.Create(ctx, courier)
+}
+
+func (s *Service) UpdateCourierStatusIsActive(ctx context.Context, chatID int64, currStatus bool) error {
+	err := s.repo.Courier.UpdateCourierStatusIsActive(ctx, chatID, currStatus)
+	if err != nil {
+		s.log.Error("Internal Server Error", "Error", err)
+	}
+	return err
 }

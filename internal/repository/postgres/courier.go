@@ -377,3 +377,37 @@ func (r *courierRepository) CheckCourierByChatID(ctx context.Context, chatID int
 
 	return exists
 }
+
+func (r *courierRepository) UpdateCourierStatusIsActive(ctx context.Context, chatID int64, currStatus bool) error {
+	query := `
+		UPDATE couriers
+		SET
+			is_active = $1
+		WHERE
+			chat_id = $2
+	`
+
+	_, err := r.db.ExecContext(ctx, query, !currStatus, chatID)
+	if err != nil {
+		return fmt.Errorf("Failed to update courier status (is_active): %v", err)
+	}
+
+	return nil
+}
+
+func (r *courierRepository) UpdateCurrentOrderID(ctx context.Context, chatID int64, orderID int) error {
+	query := `
+		UPDATE couriers
+		SET
+			current_order_id = $1
+		WHERE
+			chat_id = $2
+	`
+
+	_, err := r.db.ExecContext(ctx, query, orderID, chatID)
+	if err != nil {
+		return fmt.Errorf("Failed to update current order ID (#%d) for courier with chatID #%d: %v", orderID, chatID, err)
+	}
+
+	return nil
+}

@@ -223,9 +223,9 @@ func (r *orderAssignmentRepository) List(ctx context.Context) ([]*models.OrderAs
 func (r *orderAssignmentRepository) GetRejectedCouriers(ctx context.Context, orderID int) ([]int, error) {
 	query := `
 		SELECT
-			counter_id
+			courier_id
 		FROM
-			order-assignments
+			order_assignments
 		WHERE
 			order_id = $1 AND courier_response_status IN ('rejected', 'expired')
 	`

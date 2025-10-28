@@ -11,8 +11,10 @@ type BotInterface interface {
 	SendMessageWithKeyboard(chatID int64, text string, keyboard tgbotapi.ReplyKeyboardMarkup) error
 	SendMessageWithInlineKeyboard(chatID int64, text string, keyboard tgbotapi.InlineKeyboardMarkup) error
 
-	EditMessageText(chatID int64, messageID int64, text string) error
-	EditMessageReplyMarkup(chatID int64, messageID int64, replyMarkup interface{}) error
+	EditMessageText(chatID int64, messageID int, text string) error
+	EditMessageReplyMarkup(chatID int64, messageID int, replyMarkup interface{}) error
+
+	DeleteMessage(chatID int64, messageID int)
 
 	AnswerCallbackQuery(callbackQueryID string) error
 	AnswerCallbackQueryWithText(callbackQueryID, text string) error
@@ -33,6 +35,7 @@ type KeyboardManagerInterface interface {
 	CreateOrderListKeyboard(orders []OrderListItem) tgbotapi.InlineKeyboardMarkup
 	CreateProblemKeyboard(orderID int) tgbotapi.InlineKeyboardMarkup
 	CreateYesNoKeyboard(action string, id int) tgbotapi.InlineKeyboardMarkup
+	CreateChangeWorkmodeKeyboard(isActive bool) tgbotapi.InlineKeyboardMarkup
 	RemoveKeyboard() tgbotapi.ReplyKeyboardRemove
 
 	GetActionFromCallback(callbackData string) string
@@ -58,9 +61,10 @@ type HandlersInterface interface {
 	HandleProblemOrder(bot BotInterface, chatID int64, callbackData string)
 	HandleNavigation(bot BotInterface, chatID int64, callbackData string)
 	HanldeCallCustomeer(bot BotInterface, chatID int64, callbackData string)
+	HandleChangeWorkmode(ctx context.Context, bot BotInterface, chatID int64, callbackData string)
 
 	HandleStatusUpdate(ctx context.Context, bot BotInterface, chatID int64, callbackData string)
-	HanldeSettings(bot BotInterface, chatID int64, callbackData string)
+	HanldeSettings(ctx context.Context, ot BotInterface, chatID int64, callbackData string)
 	HandleConfirmation(bot BotInterface, chatID int64, callbackData string)
 	HanldeRefresh(ctx context.Context, bot BotInterface, chatID int64, callbackData string)
 	HandleMenu(bot BotInterface, chatID int64, callbackData string)
@@ -91,6 +95,7 @@ const (
 	ActionMenu            = "menu"
 	ActionConfirmDelivery = "confirm_delivery"
 	ActionCancelDelivery  = "cancel_delivery"
+	ActionChangeWorkmode  = "change_workmode"
 
 	// Sub-actions
 	ActionOrderDetails = "order_details"

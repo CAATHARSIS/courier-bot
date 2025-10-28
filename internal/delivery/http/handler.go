@@ -22,9 +22,8 @@ type WebhookHandler struct {
 	log               *slog.Logger
 }
 
-type NewOrderWebhook struct {
-	OrderID   int    `json:"order_id" validate:"required,min=1"`
-	Signature string `json:"signature,omitempty"`
+type WebhookPayload struct {
+	OrderID int `json:"order_id" validate:"required,min=1"`
 }
 
 type WebHookResponse struct {
@@ -54,10 +53,21 @@ func (h *WebhookHandler) HandleNewOrderWebhook(ctx context.Context, w http.Respo
 		h.sendErrorResponse(w, "Failed to read request body", http.StatusBadRequest)
 		return
 	}
+	defer r.Body.Close()
 
 	r.Body = io.NopCloser(bytes.NewReader(bodyBytes))
 
-	var webhook NewOrderWebhook
+	if h.webhookSecret != "" {
+		validSignature := h.verifySignature(bodyBytes, r)
+
+		if !validSignature {
+			h.log.Warn("Invalid webhook signature for order")
+			h.sendErrorResponse(w, "Invalid signature", http.StatusUnauthorized)
+			return
+		}
+	}
+
+	var webhook WebhookPayload
 	if err := json.NewDecoder(r.Body).Decode(&webhook); err != nil {
 		h.log.Error("Failed to decode webhook payload", "Error", err)
 		h.sendErrorResponse(w, "Invalid JSON payload", http.StatusBadRequest)
@@ -68,15 +78,6 @@ func (h *WebhookHandler) HandleNewOrderWebhook(ctx context.Context, w http.Respo
 		h.log.Warn("Invalid order ID", "orderID", webhook.OrderID)
 		h.sendErrorResponse(w, "Invalid order ID", http.StatusBadRequest)
 		return
-	}
-
-	if h.webhookSecret != "" {
-		validSignature := h.verifySignature(r)
-
-		if !validSignature {
-			h.log.Warn("Invalid webhook signature for order", "orderID", webhook.OrderID)
-			h.sendErrorResponse(w, "Invalid signature", http.StatusUnauthorized)
-		}
 	}
 
 	h.log.Info("Received new order webhook", "orderID", webhook.OrderID)
@@ -99,7 +100,7 @@ func (h *WebhookHandler) processOrderAssignment(ctx context.Context, orderID int
 	h.log.Info("Order assignment processing completed", "orderID", orderID, "time", processingTime)
 }
 
-func (h *WebhookHandler) verifySignature(r *http.Request) bool {
+func (h *WebhookHandler) verifySignature(bodyBytes []byte, r *http.Request) bool {
 	if h.webhookSecret == "" {
 		h.log.Debug("Webhook secret not set, signature verifacation disabled")
 		return true
@@ -111,19 +112,13 @@ func (h *WebhookHandler) verifySignature(r *http.Request) bool {
 		return false
 	}
 
-	bodyBytes, err := io.ReadAll(r.Body)
-	if err != nil {
-		h.log.Error("Failed to read request body for signature verification", "Error", err)
-		return false
-	}
-
-	r.Body = io.NopCloser(bytes.NewReader(bodyBytes))
-
 	expectedSignature, err := h.computeHMACSHA256(bodyBytes, h.webhookSecret)
 	if err != nil {
 		h.log.Error("Failed to compute HMAC signature", "Error", err)
 		return false
 	}
+
+	h.log.Debug("Signature verification", "Expected", expectedSignature, "Received", signatureHeader, "Body", string(bodyBytes))
 
 	isValid := hmac.Equal([]byte(signatureHeader), []byte(expectedSignature))
 

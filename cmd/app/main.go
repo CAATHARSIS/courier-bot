@@ -14,7 +14,6 @@ import (
 	"github.com/CAATHARSIS/courier-bot/internal/logger"
 	"github.com/CAATHARSIS/courier-bot/internal/repository"
 	"github.com/CAATHARSIS/courier-bot/internal/service/assignment"
-	"github.com/CAATHARSIS/courier-bot/internal/service/notification"
 	"github.com/CAATHARSIS/courier-bot/pkg/database"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 
@@ -63,12 +62,10 @@ func main() {
 	telegramBot.Debug = cfg.Env == "dev"
 	log.Info("Authorized on account", "username", telegramBot.Self.UserName)
 
-	notificationService := notification.NewService(telegramBot, log)
+	assignmentService := assignment.NewService(*repo, telegramBot, log)
 
-	assignmentService := assignment.NewService(*repo, notificationService, log)
-
-	assignmentManager := assignment.NewAssignmentManager(assignmentService, log)
-	assignmentManager.StartCleanupWorker()
+	// assignmentManager := assignment.NewAssignmentManager(assignmentService, log)
+	// assignmentManager.StartCleanupWorker()
 
 	webhookHandler := delivery.NewWebhookHandler(assignmentService, cfg.WebhookSecret, log)
 
@@ -83,7 +80,7 @@ func main() {
 	mux.HandleFunc("/webhook/order", func(w http.ResponseWriter, r *http.Request) {
 		webhookHandler.HandleNewOrderWebhook(context.Background(), w, r)
 	})
-	mux.HandleFunc("/heath", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 		w.Write([]byte("OK"))
 	})

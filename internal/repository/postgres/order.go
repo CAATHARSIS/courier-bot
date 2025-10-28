@@ -109,7 +109,6 @@ func (r *orderRepository) GetActiveOrdersByCourier(ctx context.Context, courierI
 		SELECT
 			id,
 			user_id,
-			surname,
 			name,
 			phone_number,
 			city,
@@ -139,7 +138,6 @@ func (r *orderRepository) GetActiveOrdersByCourier(ctx context.Context, courierI
 			AND is_paid = true
 			AND is_assembled = true
 			AND is_received = false
-			AND delivery_date >= NOW() - INTERVAL '1 day'
 		ORDER BY
 			CASE
 				WHEN delivery_date <= NOW() THEN 1

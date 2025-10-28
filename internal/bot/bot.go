@@ -2,6 +2,7 @@ package bot
 
 import (
 	"context"
+	"fmt"
 	"log/slog"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
@@ -73,17 +74,34 @@ func (b *TelegramBot) SendMessageWithInlineKeyboard(chatID int64, text string, k
 	return err
 }
 
-func (b *TelegramBot) EditMessageText(chatID int64, messageID int64, text string) error {
-	editMsg := tgbotapi.NewEditMessageText(chatID, int(messageID), text)
+func (b *TelegramBot) EditMessageText(chatID int64, messageID int, text string) error {
+	editMsg := tgbotapi.NewEditMessageText(chatID, messageID, text)
 	editMsg.ParseMode = ParseMode
 	_, err := b.api.Send(editMsg)
 	return err
 }
 
-func (b *TelegramBot) EditMessageReplyMarkup(chatID int64, messageID int64, replyMarkup interface{}) error {
-	editMsg := tgbotapi.NewEditMessageReplyMarkup(chatID, int(messageID), replyMarkup.(tgbotapi.InlineKeyboardMarkup))
+func (b *TelegramBot) EditMessageReplyMarkup(chatID int64, messageID int, replyMarkup interface{}) error {
+	var keyboard tgbotapi.InlineKeyboardMarkup
+
+	if replyMarkup == nil {
+		keyboard = tgbotapi.NewInlineKeyboardMarkup()
+	} else {
+		var ok bool
+		keyboard, ok = replyMarkup.(tgbotapi.InlineKeyboardMarkup)
+		if !ok {
+			return fmt.Errorf("invalid keyboard type: %T", replyMarkup)
+		}
+	}
+
+	editMsg := tgbotapi.NewEditMessageReplyMarkup(chatID, messageID, keyboard)
 	_, err := b.api.Send(editMsg)
 	return err
+}
+
+func (b *TelegramBot) DeleteMessage(chatID int64, messageID int) {
+	deleteMsg := tgbotapi.NewDeleteMessage(chatID, messageID)
+	b.api.Send(deleteMsg)
 }
 
 func (b *TelegramBot) AnswerCallbackQuery(callbackQueryID string) error {

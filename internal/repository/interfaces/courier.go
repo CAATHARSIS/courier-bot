@@ -15,4 +15,6 @@ type CourierRepository interface {
 	GetActiveCouriers(ctx context.Context) ([]*models.Courier, error)
 	GetByChatID(ctx context.Context, chatID int64) (*models.Courier, error)
 	CheckCourierByChatID(ctx context.Context, chatID int64) bool
+	UpdateCourierStatusIsActive(ctx context.Context, chatID int64, currStatus bool) error
+	UpdateCurrentOrderID(ctx context.Context, chatID int64, orderID int) error
 }

@@ -85,9 +85,9 @@ func (h *Handlers) HandleCallback(ctx context.Context, bot BotInterface, update 
 
 	switch action {
 	case ActionAccept:
-		h.HandleAcceptOrder(ctx, bot, chatID, callbackData, int64(callback.Message.MessageID))
+		h.HandleAcceptOrder(ctx, bot, chatID, callbackData, callback.Message.MessageID)
 	case ActionReject:
-		h.HandleRejectOrder(ctx, bot, chatID, callbackData, int64(callback.Message.MessageID))
+		h.HandleRejectOrder(ctx, bot, chatID, callbackData, callback.Message.MessageID)
 	case ActionComplete:
 		h.HandleCompleteOrder(ctx, bot, chatID, callbackData)
 	case ActionProblem:
@@ -99,7 +99,7 @@ func (h *Handlers) HandleCallback(ctx context.Context, bot BotInterface, update 
 	case ActionStatus:
 		h.HandleStatusUpdate(ctx, bot, chatID, callbackData)
 	case ActionSettings:
-		h.HandleSettings(bot, chatID, callbackData)
+		h.HandleSettings(ctx, bot, chatID, callbackData)
 	case ActionConfirm:
 		h.HandleConfirmation(bot, chatID, callbackData)
 	case ActionRefresh:
@@ -114,6 +114,8 @@ func (h *Handlers) HandleCallback(ctx context.Context, bot BotInterface, update 
 		h.HandleDeliveryConfirmation(ctx, bot, chatID, callbackData)
 	case ActionCancelDelivery:
 		h.HandleDeliveryCancel(ctx, bot, chatID, callbackData)
+	case ActionChangeWorkmode:
+		h.HandleChangeWorkmode(ctx, bot, chatID, callbackData)
 	default:
 		h.HandleUnknownCommand(bot, chatID)
 	}
@@ -239,7 +241,7 @@ func (h *Handlers) HandleUnknownCommand(bot BotInterface, chatID int64) {
 
 // CALLBACK HANDLERS
 
-func (h *Handlers) HandleAcceptOrder(ctx context.Context, bot BotInterface, chatID int64, callbackData string, messageID int64) {
+func (h *Handlers) HandleAcceptOrder(ctx context.Context, bot BotInterface, chatID int64, callbackData string, messageID int) {
 	orderID, err := h.ExtractOrderID(callbackData)
 	if err != nil {
 		h.log.Error("Failed to extract order ID from callback", "CallbackData", callbackData)
@@ -249,7 +251,7 @@ func (h *Handlers) HandleAcceptOrder(ctx context.Context, bot BotInterface, chat
 
 	h.log.Info("Courier accepting order", "chatID", chatID, "orderID", orderID)
 
-	bot.EditMessageReplyMarkup(chatID, messageID, nil)
+	bot.AnswerCallbackQueryWithText("", "✅ Принимаем заказ...")
 
 	err = h.assignmentService.HandleCourierResponse(ctx, chatID, orderID, true)
 	if err != nil {
@@ -257,9 +259,11 @@ func (h *Handlers) HandleAcceptOrder(ctx context.Context, bot BotInterface, chat
 		bot.SendMessage(chatID, "❌ Не удалось принять заказ. Попробуйте позже.")
 		return
 	}
+
+	bot.DeleteMessage(chatID, messageID)
 }
 
-func (h *Handlers) HandleRejectOrder(ctx context.Context, bot BotInterface, chatID int64, callbackData string, messageID int64) {
+func (h *Handlers) HandleRejectOrder(ctx context.Context, bot BotInterface, chatID int64, callbackData string, messageID int) {
 	orderID, err := h.ExtractOrderID(callbackData)
 	if err != nil {
 		h.log.Error("Failed to extract order ID from callback", "CallbackData", callbackData)
@@ -277,6 +281,8 @@ func (h *Handlers) HandleRejectOrder(ctx context.Context, bot BotInterface, chat
 		bot.SendMessage(chatID, "❌ Не удалось отклонить заказ. Попробуйте позже.")
 		return
 	}
+
+	bot.DeleteMessage(chatID, messageID)
 }
 
 func (h *Handlers) HandleCompleteOrder(ctx context.Context, bot BotInterface, chatID int64, callbackData string) {
@@ -403,12 +409,25 @@ func (h *Handlers) HandleStatusUpdate(ctx context.Context, bot BotInterface, cha
 	}
 }
 
-func (h *Handlers) HandleSettings(bot BotInterface, chatID int64, callbackData string) {
+func (h *Handlers) HandleSettings(ctx context.Context, bot BotInterface, chatID int64, callbackData string) {
 	switch callbackData {
 	case SettingsNotifications:
 		bot.SendMessage(chatID, "🔔 Настройки уведомлений...\nУбрать может э")
 	case SettingsWorkmode:
-		bot.SendMessage(chatID, "Настройки режима работы...\nУбрать может э")
+		courier, err := h.assignmentService.GetCourierByChatID(ctx, chatID)
+		if err != nil {
+			bot.SendMessage(chatID, "❌ Ошибка доступа")
+		}
+
+		isActiveText := "Активен"
+		if !courier.IsActive {
+			isActiveText = "Не активен"
+		}
+
+		msg := fmt.Sprintf("⚙️ *Текущий статус: %s*", isActiveText)
+
+		keyboard := h.keyboardManager.CreateChangeWorkmodeKeyboard(courier.IsActive)
+		bot.SendMessageWithInlineKeyboard(chatID, msg, keyboard)
 	case SettingsContacts:
 		bot.SendMessage(chatID, "Контактная информация...\nУбрать может э")
 	default:
@@ -524,6 +543,32 @@ func (h *Handlers) HandleDeliveryCancel(ctx context.Context, bot BotInterface, c
 	}
 
 	h.log.Info("Delivery confirmation cancelled for order by courier", "orderID", orderID, "chatID", chatID)
+}
+
+func (h *Handlers) HandleChangeWorkmode(ctx context.Context, bot BotInterface, chatID int64, callbackData string) {
+	parts := strings.Split(callbackData, "_")
+	isActiveStatus, err := strconv.ParseBool(parts[2])
+	if err != nil {
+		h.log.Warn("Invalid callback data", "Error", err, "CallbakckData", callbackData)
+		bot.SendMessage(chatID, "Ошибка на стороне сервера, попробуйте позже ⌛")
+		return
+	}
+
+	err = h.assignmentService.UpdateCourierStatusIsActive(ctx, chatID, isActiveStatus)
+	if err != nil {
+		bot.SendMessage(chatID, "Ошибка на стороне сервера, попробуйте позже ⌛")
+		return
+	}
+
+	var secondPartMsg string
+	if isActiveStatus {
+		secondPartMsg = "Поменяйте статус в настройках на *\"активен\"*, когда захотите вернуться к работе"
+	} else {
+		secondPartMsg = "Теперь ваш статус *\"активен\"*, ждите уведомлений о новых заказах"
+	}
+	msg := "📝 Ваш статус успешно измен\n\n" + secondPartMsg
+
+	bot.SendMessage(chatID, msg)
 }
 
 // STATUS UPDATE HANDLERS

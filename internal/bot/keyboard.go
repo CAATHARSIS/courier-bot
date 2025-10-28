@@ -159,6 +159,22 @@ func (km *KeyboardManager) CreateYesNoKeyboard(action string, id int) tgbotapi.I
 	)
 }
 
+func (km *KeyboardManager) CreateChangeWorkmodeKeyboard(isActive bool) tgbotapi.InlineKeyboardMarkup {
+	changeMsg := "Закончить смену"
+	if !isActive {
+		changeMsg = "Начать смену"
+	}
+
+	return tgbotapi.NewInlineKeyboardMarkup(
+		tgbotapi.NewInlineKeyboardRow(
+			tgbotapi.NewInlineKeyboardButtonData(changeMsg, fmt.Sprintf("change_workmode_%t", isActive)),
+		),
+		tgbotapi.NewInlineKeyboardRow(
+			tgbotapi.NewInlineKeyboardButtonData("↩️ Назад", "settings"),
+		),
+	)
+}
+
 func (km *KeyboardManager) RemoveKeyboard() tgbotapi.ReplyKeyboardRemove {
 	return tgbotapi.NewRemoveKeyboard(true)
 }
@@ -212,16 +228,17 @@ func (km *KeyboardManager) GetActionFromCallback(callback string) string {
 		ActionReject,
 		ActionComplete,
 		ActionProblem,
-		"nav",
-		"call",
-		"status",
-		"settings",
-		"confirm",
-		"cancel",
-		"refresh",
-		"menu",
-		"order_details",
-		"back_to_order",
+		ActionNavigate,
+		ActionCall,
+		ActionStatus,
+		ActionSettings,
+		ActionConfirm,
+		ActionConfirm,
+		ActionRefresh,
+		ActionMenu,
+		ActionOrderDetails,
+		ActionBackToOrder,
+		ActionChangeWorkmode,
 	}
 
 	for _, prefix := range prefixes {
