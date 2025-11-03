@@ -10,13 +10,12 @@ import (
 type Config struct {
 	DBHost           string
 	DBPort           string
-	DBUser           string
+	DBUserName       string
 	DBPassword       string
 	DBName           string
-	WebhookSecret    string
+	AdminPassword    string
 	TelegramBotToken string
-	HTTPAddr         string
-	Env              string
+	BotPort          string
 }
 
 func Load() *Config {
@@ -28,13 +27,12 @@ func Load() *Config {
 	return &Config{
 		DBHost:           getEnv("DB_HOST", "localhost"),
 		DBPort:           getEnv("DB_PORT", "5432"),
-		DBUser:           getEnv("DB_USER", "postgres"),
+		DBUserName:       getEnv("DB_USERNAME", "postgres"),
 		DBPassword:       getEnv("DB_PASSWORD", "postgres"),
 		DBName:           getEnv("DB_NAME", "courier-bot"),
-		WebhookSecret:    getEnv("WEBHOOK_SECRET", ""),
+		AdminPassword:    getEnv("ADMIN_PASSWORD", ""),
 		TelegramBotToken: getEnv("TELEGRAM_BOT_TOKEN", ""),
-		HTTPAddr:         getEnv("HTTP_ADDR", ":8080"),
-		Env:              getEnv("ENV", "local"),
+		BotPort:          getEnv("HTTP_ADDR", ":8080"),
 	}
 }
 

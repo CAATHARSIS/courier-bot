@@ -28,14 +28,14 @@ type BotInterface interface {
 type KeyboardManagerInterface interface {
 	CreateAssignmentKeyboard(orderID int) tgbotapi.InlineKeyboardMarkup
 	CreateDeliveryKeyboard(orderID int, address, phone string) tgbotapi.InlineKeyboardMarkup
-	CreateStatusKeyboard(orderID int) tgbotapi.InlineKeyboardMarkup
 	CreateMainMenuKeyboard() tgbotapi.ReplyKeyboardMarkup
 	CreateSettingsKeyboard() tgbotapi.InlineKeyboardMarkup
 	CreateConfirmationKeyboard(action string, data interface{}) tgbotapi.InlineKeyboardMarkup
 	CreateOrderListKeyboard(orders []OrderListItem) tgbotapi.InlineKeyboardMarkup
-	CreateProblemKeyboard(orderID int) tgbotapi.InlineKeyboardMarkup
 	CreateYesNoKeyboard(action string, id int) tgbotapi.InlineKeyboardMarkup
 	CreateChangeWorkmodeKeyboard(isActive bool) tgbotapi.InlineKeyboardMarkup
+	CreateBackToOrderKeyboard(orderID int) tgbotapi.InlineKeyboardMarkup
+	CreateBackToSettingsKeyboard() tgbotapi.InlineKeyboardMarkup
 	RemoveKeyboard() tgbotapi.ReplyKeyboardRemove
 
 	GetActionFromCallback(callbackData string) string
@@ -58,7 +58,6 @@ type HandlersInterface interface {
 	HandleAcceptOrder(ctx context.Context, bot BotInterface, chatID int64, callbackData string, messageID int64)
 	HandleRejectOrder(ctx context.Context, bot BotInterface, chatID int64, callbackData string, messageID int64)
 	HandleCompleteOrder(ctx context.Context, bot BotInterface, chatID int64, callbackData string)
-	HandleProblemOrder(bot BotInterface, chatID int64, callbackData string)
 	HandleNavigation(bot BotInterface, chatID int64, callbackData string)
 	HanldeCallCustomeer(bot BotInterface, chatID int64, callbackData string)
 	HandleChangeWorkmode(ctx context.Context, bot BotInterface, chatID int64, callbackData string)
@@ -82,42 +81,23 @@ const (
 	ActionAccept   = "accept"
 	ActionReject   = "reject"
 	ActionComplete = "complete"
-	ActionProblem  = "problem"
 
 	// Utility Actions
-	ActionNavigate        = "nav"
-	ActionCall            = "call"
-	ActionStatus          = "status"
-	ActionSettings        = "settings"
-	ActionConfirm         = "confirm"
-	ActionCancel          = "cancel"
-	ActionRefresh         = "refresh"
-	ActionMenu            = "menu"
-	ActionConfirmDelivery = "confirm_delivery"
-	ActionCancelDelivery  = "cancel_delivery"
-	ActionChangeWorkmode  = "change_workmode"
+	ActionNavigate       = "nav"
+	ActionCall           = "call"
+	ActionSettings       = "settings"
+	ActionCancel         = "cancel"
+	ActionRefresh        = "refresh"
+	ActionMenu           = "menu"
+	ActionChangeWorkmode = "change_workmode"
 
 	// Sub-actions
 	ActionOrderDetails = "order_details"
 	ActionBackToOrder  = "back_to_order"
 
-	// Problem Sub-types
-	ProblemNoAnswer     = "problem_noanswer"
-	ProblemWrongAddress = "problem_wrongaddress"
-	ProblemPayment      = "problem_payment"
-	ProblemTechnical    = "problem_technical"
-	ProblemOther        = "problem_other"
-
-	// Status Sub-types
-	StatusPicked     = "status_picked"
-	StatusDelivering = "status_delivering"
-	StatusArrived    = "status_arrived"
-	StatusDelivered  = "status_delivered"
-
 	// Settings Sub-types
-	SettingsNotifications = "settings_notifications"
-	SettingsWorkmode      = "settings_workmode"
-	SettingsContacts      = "settings_contacts"
+	SettingsWorkmode = "settings_workmode"
+	SettingsContacts = "settings_contacts"
 
 	// Menu Sub-types
 	MenuMain = "menu_main"
@@ -129,10 +109,4 @@ type OrderListItem struct {
 	Address string
 	Time    string
 	Price   int
-}
-
-type BotConfig struct {
-	Token   string
-	Debug   bool
-	Timeout int // in seconds
 }

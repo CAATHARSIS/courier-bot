@@ -50,24 +50,10 @@ func (km *KeyboardManager) CreateDeliveryKeyboard(orderID int, address, phone st
 
 	completionRow := tgbotapi.NewInlineKeyboardRow(
 		tgbotapi.NewInlineKeyboardButtonData("🏁 Доставка завершена", fmt.Sprintf("%s_%d", ActionComplete, orderID)),
-		tgbotapi.NewInlineKeyboardButtonData("🚨 Проблема с доставкой", fmt.Sprintf("%s_%d", ActionProblem, orderID)),
 	)
 	rows = append(rows, completionRow)
 
 	return tgbotapi.NewInlineKeyboardMarkup(rows...)
-}
-
-func (km *KeyboardManager) CreateStatusKeyboard(orderID int) tgbotapi.InlineKeyboardMarkup {
-	return tgbotapi.NewInlineKeyboardMarkup(
-		tgbotapi.NewInlineKeyboardRow(
-			tgbotapi.NewInlineKeyboardButtonData("🚗 Забрал заказ", fmt.Sprintf("status_picked_%d", orderID)),
-			tgbotapi.NewInlineKeyboardButtonData("🚚 В пути", fmt.Sprintf("status_delivery_%d", orderID)),
-		),
-		tgbotapi.NewInlineKeyboardRow(
-			tgbotapi.NewInlineKeyboardButtonData("📍 На месте", fmt.Sprintf("status_arrived_%d", orderID)),
-			tgbotapi.NewInlineKeyboardButtonData("✅ Доставлено", fmt.Sprintf("status_delivered_%d", orderID)),
-		),
-	)
 }
 
 func (km *KeyboardManager) CreateMainMenuKeyboard() tgbotapi.ReplyKeyboardMarkup {
@@ -86,7 +72,6 @@ func (km *KeyboardManager) CreateMainMenuKeyboard() tgbotapi.ReplyKeyboardMarkup
 func (km *KeyboardManager) CreateSettingsKeyboard() tgbotapi.InlineKeyboardMarkup {
 	return tgbotapi.NewInlineKeyboardMarkup(
 		tgbotapi.NewInlineKeyboardRow(
-			tgbotapi.NewInlineKeyboardButtonData("🔔 Уведомления", "settings_notifications"),
 			tgbotapi.NewInlineKeyboardButtonData("Режим работы", "settings_workmode"),
 		),
 		tgbotapi.NewInlineKeyboardRow(
@@ -129,27 +114,6 @@ func (km *KeyboardManager) CreateOrderListKeyboard(orders []OrderListItem) tgbot
 	return tgbotapi.NewInlineKeyboardMarkup(rows...)
 }
 
-func (km *KeyboardManager) CreateProblemKeyboard(orderID int) tgbotapi.InlineKeyboardMarkup {
-	return tgbotapi.NewInlineKeyboardMarkup(
-		tgbotapi.NewInlineKeyboardRow(
-			tgbotapi.NewInlineKeyboardButtonData("📞 Клиент не отвечает", fmt.Sprintf("problem_noanswer_%d", orderID)),
-		),
-		tgbotapi.NewInlineKeyboardRow(
-			tgbotapi.NewInlineKeyboardButtonData("🏠 Неверный адрес", fmt.Sprintf("problem_wrongaddress_%d", orderID)),
-		),
-		tgbotapi.NewInlineKeyboardRow(
-			tgbotapi.NewInlineKeyboardButtonData("💳 Проблема с оплатой", fmt.Sprintf("problem_payment_%d", orderID)),
-		),
-		tgbotapi.NewInlineKeyboardRow(
-			tgbotapi.NewInlineKeyboardButtonData("🚗 Технические проблемы", fmt.Sprintf("problem_technical_%d", orderID)),
-		),
-		tgbotapi.NewInlineKeyboardRow(
-			tgbotapi.NewInlineKeyboardButtonData("❔ Другое", fmt.Sprintf("problem_other_%d", orderID)),
-			tgbotapi.NewInlineKeyboardButtonData("↩️ Назад", fmt.Sprintf("back_to_order_%d", orderID)),
-		),
-	)
-}
-
 func (km *KeyboardManager) CreateYesNoKeyboard(action string, id int) tgbotapi.InlineKeyboardMarkup {
 	return tgbotapi.NewInlineKeyboardMarkup(
 		tgbotapi.NewInlineKeyboardRow(
@@ -169,6 +133,22 @@ func (km *KeyboardManager) CreateChangeWorkmodeKeyboard(isActive bool) tgbotapi.
 		tgbotapi.NewInlineKeyboardRow(
 			tgbotapi.NewInlineKeyboardButtonData(changeMsg, fmt.Sprintf("change_workmode_%t", isActive)),
 		),
+		tgbotapi.NewInlineKeyboardRow(
+			tgbotapi.NewInlineKeyboardButtonData("↩️ Назад", "settings"),
+		),
+	)
+}
+
+func (km *KeyboardManager) CreateBackToOrderKeyboard(orderID int) tgbotapi.InlineKeyboardMarkup {
+	return tgbotapi.NewInlineKeyboardMarkup(
+		tgbotapi.NewInlineKeyboardRow(
+			tgbotapi.NewInlineKeyboardButtonData("↩️ Назад", fmt.Sprintf("back_to_order_%d", orderID)),
+		),
+	)
+}
+
+func (km *KeyboardManager) CreateBackToSettingsKeyboard() tgbotapi.InlineKeyboardMarkup {
+	return tgbotapi.NewInlineKeyboardMarkup(
 		tgbotapi.NewInlineKeyboardRow(
 			tgbotapi.NewInlineKeyboardButtonData("↩️ Назад", "settings"),
 		),
@@ -206,13 +186,8 @@ func (km *KeyboardManager) EscapeCallbackData(data string) string {
 	}
 
 	replacements := map[string]string{
-		" ":  "_",
 		"\n": "",
 		"\t": "",
-		",":  "",
-		".":  "",
-		":":  "",
-		";":  "",
 	}
 
 	for old, new := range replacements {
@@ -227,13 +202,9 @@ func (km *KeyboardManager) GetActionFromCallback(callback string) string {
 		ActionAccept,
 		ActionReject,
 		ActionComplete,
-		ActionProblem,
 		ActionNavigate,
 		ActionCall,
-		ActionStatus,
 		ActionSettings,
-		ActionConfirm,
-		ActionConfirm,
 		ActionRefresh,
 		ActionMenu,
 		ActionOrderDetails,

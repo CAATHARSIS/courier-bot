@@ -8,12 +8,12 @@ const (
 	ResponseStatusWaiting  CourierResponseStatus = "waiting"
 	ResponseStatusAccepted CourierResponseStatus = "accepted"
 	ResponseStatusRejected CourierResponseStatus = "rejected"
-	ResponsseStatusExpired CourierResponseStatus = "expired"
+	ResponseStatusExpired CourierResponseStatus = "expired"
 )
 
 func (s CourierResponseStatus) IsValid() bool {
 	switch s {
-	case ResponseStatusWaiting, ResponseStatusAccepted, ResponseStatusRejected, ResponsseStatusExpired:
+	case ResponseStatusWaiting, ResponseStatusAccepted, ResponseStatusRejected, ResponseStatusExpired:
 		return true
 	default:
 		return false

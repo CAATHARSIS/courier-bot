@@ -2,6 +2,8 @@ package main
 
 import (
 	"context"
+	"encoding/json"
+	"log/slog"
 	"net/http"
 	"os"
 	"os/signal"
@@ -11,7 +13,6 @@ import (
 	"github.com/CAATHARSIS/courier-bot/internal/bot"
 	"github.com/CAATHARSIS/courier-bot/internal/config"
 	delivery "github.com/CAATHARSIS/courier-bot/internal/delivery/http"
-	"github.com/CAATHARSIS/courier-bot/internal/logger"
 	"github.com/CAATHARSIS/courier-bot/internal/repository"
 	"github.com/CAATHARSIS/courier-bot/internal/service/assignment"
 	"github.com/CAATHARSIS/courier-bot/pkg/database"
@@ -23,10 +24,8 @@ import (
 func main() {
 	cfg := config.Load()
 
-	log := logger.NewLogger(cfg.Env)
-	if cfg.Env != "prod" {
-		log.Info("Debug messages are enable")
-	}
+	log := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug}))
+	log.Info("Debug messages are enable")
 
 	migrationDB, err := database.NewPostgresDB(cfg)
 	if err != nil {
@@ -59,18 +58,22 @@ func main() {
 		os.Exit(1)
 	}
 
-	telegramBot.Debug = cfg.Env == "dev"
+	telegramBot.Debug = false
 	log.Info("Authorized on account", "username", telegramBot.Self.UserName)
 
-	assignmentService := assignment.NewService(*repo, telegramBot, log)
+	assignmentManagerConfig := assignment.AssignmentManagerConfig{
+		AssignmentTimeout: 5 * time.Minute,
+		RetryDelay:        10 * time.Second,
+		MaxRetries:        3,
+	}
 
-	// assignmentManager := assignment.NewAssignmentManager(assignmentService, log)
-	// assignmentManager.StartCleanupWorker()
+	assignmentManager := assignment.NewManager(repo, telegramBot, log, assignmentManagerConfig)
+	assignmentManager.StartCleanupWorker()
 
-	webhookHandler := delivery.NewWebhookHandler(assignmentService, cfg.WebhookSecret, log)
+	webhookHandler := delivery.NewWebhookHandler(assignmentManager, cfg.AdminPassword, log)
 
 	keyboardManager := bot.NewkeyboardManager(log)
-	handlers := bot.NewHandlers(assignmentService, keyboardManager, log)
+	handlers := bot.NewHandlers(assignmentManager, keyboardManager, log)
 
 	botInstance := bot.NewTelegramBot(telegramBot, handlers, log)
 
@@ -84,16 +87,20 @@ func main() {
 		w.WriteHeader(http.StatusOK)
 		w.Write([]byte("OK"))
 	})
+	mux.HandleFunc("/admin/assignments/stats", func(w http.ResponseWriter, r *http.Request) {
+		stats := assignmentManager.GetAssignmentsStats()
+		json.NewEncoder(w).Encode(stats)
+	})
 
 	server := &http.Server{
-		Addr:         cfg.HTTPAddr,
+		Addr:         cfg.BotPort,
 		Handler:      mux,
 		ReadTimeout:  10 * time.Second,
 		WriteTimeout: 10 * time.Second,
 	}
 
 	go func() {
-		log.Info("Starting HTTP server", "addr", cfg.HTTPAddr)
+		log.Info("Starting HTTP server", "addr", cfg.BotPort)
 		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			log.Error("Failed to start HTTP server", "error", err)
 			os.Exit(1)

@@ -11,13 +11,12 @@ import (
 	"io"
 	"log/slog"
 	"net/http"
-	"time"
 
 	"github.com/CAATHARSIS/courier-bot/internal/service/assignment"
 )
 
 type WebhookHandler struct {
-	assignmentService *assignment.Service
+	assignmentManager *assignment.Manager
 	webhookSecret     string
 	log               *slog.Logger
 }
@@ -32,9 +31,9 @@ type WebHookResponse struct {
 	Error   string `json:"error,omitempty"`
 }
 
-func NewWebhookHandler(assignmentService *assignment.Service, webhookSecret string, log *slog.Logger) *WebhookHandler {
+func NewWebhookHandler(manager *assignment.Manager, webhookSecret string, log *slog.Logger) *WebhookHandler {
 	return &WebhookHandler{
-		assignmentService: assignmentService,
+		assignmentManager: manager,
 		webhookSecret:     webhookSecret,
 		log:               log,
 	}
@@ -88,16 +87,12 @@ func (h *WebhookHandler) HandleNewOrderWebhook(ctx context.Context, w http.Respo
 }
 
 func (h *WebhookHandler) processOrderAssignment(ctx context.Context, orderID int) {
-	startTime := time.Now()
 	h.log.Info("Starting async order assignment processing", "orderID", orderID)
 
-	if err := h.assignmentService.ProcessNewOrder(ctx, orderID); err != nil {
+	if err := h.assignmentManager.ProcessNewOrder(ctx, orderID); err != nil {
 		h.log.Error("Failed to process order", "orderID", orderID, "Error", err)
 		return
 	}
-
-	processingTime := time.Since(startTime)
-	h.log.Info("Order assignment processing completed", "orderID", orderID, "time", processingTime)
 }
 
 func (h *WebhookHandler) verifySignature(bodyBytes []byte, r *http.Request) bool {

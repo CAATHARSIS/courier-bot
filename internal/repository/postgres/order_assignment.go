@@ -34,6 +34,10 @@ func (r *orderAssignmentRepository) Create(ctx context.Context, orderAssignment 
 			id
 	`
 
+	if !orderAssignment.CourierResponseStatus.IsValid() {
+		orderAssignment.CourierResponseStatus = models.ResponseStatusWaiting
+	}
+
 	err := r.db.QueryRowContext(
 		ctx,
 		query,
@@ -128,7 +132,7 @@ func (r *orderAssignmentRepository) Update(ctx context.Context, orderAssignment 
 		orderAssignment.ExpiredAt = oldOrderAssignment.ExpiredAt
 	}
 
-	if orderAssignment.CourierResponseStatus == "" {
+	if orderAssignment.CourierResponseStatus == "" || !orderAssignment.CourierResponseStatus.IsValid() {
 		orderAssignment.CourierResponseStatus = oldOrderAssignment.CourierResponseStatus
 	}
 
@@ -173,7 +177,7 @@ func (r *orderAssignmentRepository) DeleteByID(ctx context.Context, id int) erro
 	return nil
 }
 
-func (r *orderAssignmentRepository) List(ctx context.Context) ([]*models.OrderAssignment, error) {
+func (r *orderAssignmentRepository) List(ctx context.Context) ([]models.OrderAssignment, error) {
 	query := `
 		SELECT
 			id,
@@ -192,7 +196,7 @@ func (r *orderAssignmentRepository) List(ctx context.Context) ([]*models.OrderAs
 	}
 	defer rows.Close()
 
-	var orderAssignments []*models.OrderAssignment
+	var orderAssignments []models.OrderAssignment
 
 	for rows.Next() {
 		var orderAssignment models.OrderAssignment
@@ -210,7 +214,7 @@ func (r *orderAssignmentRepository) List(ctx context.Context) ([]*models.OrderAs
 			return nil, fmt.Errorf("failed to scan order assignment: %v", err)
 		}
 
-		orderAssignments = append(orderAssignments, &orderAssignment)
+		orderAssignments = append(orderAssignments, orderAssignment)
 	}
 
 	if err := rows.Err(); err != nil {
@@ -298,4 +302,82 @@ func (r *orderAssignmentRepository) UpdateStatus(ctx context.Context, orderID in
 	}
 
 	return nil
+}
+
+func (r *orderAssignmentRepository) GetWaitingByCourierID(ctx context.Context, courierID int) ([]models.OrderAssignment, error) {
+	query := `
+		SELECT
+			id,
+			order_id,
+			courier_id,
+			assigned_at,
+			expired_at,
+			courier_response_status
+		FROM
+			order_assignments
+		WHERE
+			courier_id = $1
+			AND courier_response_status = 'waiting'
+	`
+
+	rows, err := r.db.QueryContext(ctx, query, courierID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to list assignments with status \"wating\" (courier ID: %d)", courierID)
+	}
+	defer rows.Close()
+
+	var assignments []models.OrderAssignment
+	for rows.Next() {
+		var assignment models.OrderAssignment
+
+		err := rows.Scan(
+			&assignment.ID,
+			&assignment.OrderID,
+			&assignment.CourierID,
+			&assignment.AssignedAt,
+			&assignment.ExpiredAt,
+			&assignment.CourierResponseStatus,
+		)
+		if err != nil {
+			return nil, fmt.Errorf("faiiled to scan order assignment: %v", err)
+		}
+
+		assignments = append(assignments, assignment)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("rows error: %v", err)
+	}
+
+	return assignments, nil
+}
+
+func (r *orderAssignmentRepository) GetWiatingByOrderID(ctx context.Context, orderID int) (*models.OrderAssignment, error) {
+	query := `
+		SELECT
+			id,
+			order_id,
+			courier_id,
+			assigned_at,
+			expired_at,
+			courier_response_status
+		FROM
+			order_assignments
+		WHERE
+			order_id = $1
+	`
+	var assignment models.OrderAssignment
+	err := r.db.QueryRowContext(ctx, query, orderID).Scan(
+		&assignment.ID,
+		&assignment.OrderID,
+		&assignment.CourierID,
+		&assignment.AssignedAt,
+		&assignment.ExpiredAt,
+		&assignment.CourierResponseStatus,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("failed to scan order assignment: %v", err)
+	}
+
+	return &assignment, nil
 }

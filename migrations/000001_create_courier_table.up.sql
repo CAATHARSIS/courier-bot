@@ -5,8 +5,8 @@ CREATE TABLE IF NOT EXISTS couriers (
     name TEXT NOT NULL,
     phone VARCHAR(10) NOT NULL,
     is_active BOOLEAN DEFAULT true,
-    last_seen TIMESTAMP WITH TIME ZONE,
+    last_seen TIMESTAMP,
     current_order_id INTEGER REFERENCES orders(id),
     rating DECIMAL(3, 2),
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()   
+    created_at TIMESTAMP DEFAULT NOW()   
 );

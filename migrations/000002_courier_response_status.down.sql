@@ -1,1 +1,0 @@
-DROP TYPE IF EXISTS courier_response_status;

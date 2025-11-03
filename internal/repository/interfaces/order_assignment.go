@@ -11,8 +11,10 @@ type OrderAssignment interface {
 	GetByID(ctx context.Context, id int) (*models.OrderAssignment, error)
 	Update(ctx context.Context, orderAssignment *models.OrderAssignment) (*models.OrderAssignment, error)
 	DeleteByID(ctx context.Context, id int) error
-	List(ctx context.Context) ([]*models.OrderAssignment, error)
+	List(ctx context.Context) ([]models.OrderAssignment, error)
 	GetRejectedCouriers(ctx context.Context, id int) ([]int, error)
 	GetByOrderID(ctx context.Context, orderID int) (*models.OrderAssignment, error)
 	UpdateStatus(ctx context.Context, id int, status models.CourierResponseStatus) error
+	GetWaitingByCourierID(ctx context.Context, courierID int) ([]models.OrderAssignment, error)
+	GetWiatingByOrderID(ctx context.Context, orderID int) (*models.OrderAssignment, error)
 }
