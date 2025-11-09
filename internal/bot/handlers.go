@@ -1,9 +1,12 @@
 package bot
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
 	"log/slog"
+	"net/http"
 	"strconv"
 	"strings"
 	"time"
@@ -16,14 +19,26 @@ import (
 type Handlers struct {
 	assignmentManager *assignment.Manager
 	keyboardManager   KeyboardManagerInterface
+	webhookSecret     string
 	log               *slog.Logger
 }
 
-func NewHandlers(assignmentManager *assignment.Manager, keyboardManager KeyboardManagerInterface, log *slog.Logger) *Handlers {
+func NewHandlers(assignmentManager *assignment.Manager, keyboardManager KeyboardManagerInterface, webhookSecret string, log *slog.Logger) *Handlers {
 	return &Handlers{
 		assignmentManager: assignmentManager,
 		keyboardManager:   keyboardManager,
+		webhookSecret:     webhookSecret,
 		log:               log,
+	}
+}
+
+type passwordInput struct {
+	Password string `json:"password"`
+}
+
+func newPasswordInput(password string) passwordInput {
+	return passwordInput{
+		Password: password,
 	}
 }
 
@@ -306,6 +321,48 @@ func (h *Handlers) HandleCompleteOrder(ctx context.Context, bot BotInterface, ch
 		return
 	}
 
+	webhookPayload := newPasswordInput(h.webhookSecret)
+
+	jsonData, err := json.Marshal(webhookPayload)
+	if err != nil {
+		h.log.Error("Failed to marshal webhook payload", "error", err)
+		bot.SendMessage(chatID, "❌ Ошибка обработки заказа")
+		return
+	}
+
+	// local
+	// host := "https://shaurma-jan.ru"
+
+	// deploy
+	host := "app:8080"
+
+	deliveryURL := fmt.Sprintf("%s/v1/admin/delivery/%d", host, orderID)
+
+	req, err := http.NewRequest("PUT", deliveryURL, bytes.NewReader(jsonData))
+	if err != nil {
+		h.log.Error("Error creating request", "error", err)
+		bot.SendMessage(chatID, "❌ Ошибка обработки заказа")
+		return
+	}
+
+	client := &http.Client{
+		Timeout: 10 * time.Second,
+	}
+
+	resp, err := client.Do(req)
+	if err != nil {
+		h.log.Error("Error sending request", "error", err)
+		bot.SendMessage(chatID, "❌ Ошибка обработки заказа")
+		return
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		h.log.Error("Invalid response code", "code", resp.StatusCode)
+		bot.SendMessage(chatID, "❌ Ошибка обработки заказа")
+		return
+	}
+
 	message := fmt.Sprintf(
 		"✅ *Заказ #%d завершен!*\n\n"+
 			"Поздравляем с успешной доставкой!",
@@ -313,9 +370,6 @@ func (h *Handlers) HandleCompleteOrder(ctx context.Context, bot BotInterface, ch
 	)
 
 	bot.SendMessage(chatID, message)
-
-	h.assignmentManager.UpdateOrderStatusReceived(ctx, orderID, true)
-	h.log.Info("Order marked as completed by courier", "orderID", orderID, "chatID", chatID)
 }
 
 func (h *Handlers) HandleNavigation(bot BotInterface, chatID int64, callbackData string) {
@@ -439,7 +493,7 @@ func (h *Handlers) HandleOrderDetails(ctx context.Context, bot BotInterface, cha
 		order.PhoneNumber,
 		order.DeliveryDate,
 	)
-	
+
 	assignment, err := h.assignmentManager.GetWaitingAssignmentsByOrderID(ctx, order.ID)
 	if err != nil {
 		h.log.Error("Failed to check order assignment status", "callbackData", callbackData, "error", err)

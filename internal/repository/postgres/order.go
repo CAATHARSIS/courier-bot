@@ -137,7 +137,7 @@ func (r *orderRepository) GetActiveOrdersByCourier(ctx context.Context, courierI
 			courier_id = $1
 			AND is_paid = true
 			AND is_assembled = true
-			AND is_received = false
+			AND is_received IS NULL
 		ORDER BY
 			CASE
 				WHEN delivery_date <= NOW() THEN 1
@@ -195,21 +195,4 @@ func (r *orderRepository) GetActiveOrdersByCourier(ctx context.Context, courierI
 	}
 
 	return orders, nil
-}
-
-func (r *orderRepository) UpdateStatusReceived(ctx context.Context, id int, received bool) error {
-	query := `
-		UPDATE orders
-		SET
-			is_received = $1
-		WHERE
-			id = $2
-	`
-
-	_, err := r.db.ExecContext(ctx, query, received, id)
-	if err != nil {
-		return fmt.Errorf("failed to update order status: %v", err)
-	}
-
-	return nil
 }

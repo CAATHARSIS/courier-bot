@@ -732,10 +732,6 @@ func (m *Manager) GetActiveOrdersByCourier(ctx context.Context, chatID int64) ([
 	return m.repo.Order.GetActiveOrdersByCourier(ctx, courier.ID)
 }
 
-func (m *Manager) UpdateOrderStatusReceived(ctx context.Context, id int, received bool) error {
-	return m.repo.Order.UpdateStatusReceived(ctx, id, received)
-}
-
 func (m *Manager) GetOrderByID(ctx context.Context, id int) (*models.Order, error) {
 	return m.repo.Order.GetByID(ctx, id)
 }

@@ -27,7 +27,7 @@ type Order struct {
 	IsPaid                 bool           `json:"is_paid"`
 	IsDelivery             bool           `json:"is_delivery"`
 	IsAssembled            sql.NullBool   `json:"is_assembled"`
-	IsReceived             bool           `json:"is_received"`
+	IsReceived             sql.NullBool   `json:"is_received"`
 	PaymentUrl             sql.NullString `json:"payment_url"`
 	CourierID              *int           `json:"courier_id"`
 }

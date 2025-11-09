@@ -73,7 +73,7 @@ func main() {
 	webhookHandler := delivery.NewWebhookHandler(assignmentManager, cfg.AdminPassword, log)
 
 	keyboardManager := bot.NewkeyboardManager(log)
-	handlers := bot.NewHandlers(assignmentManager, keyboardManager, log)
+	handlers := bot.NewHandlers(assignmentManager, keyboardManager, cfg.AdminPassword, log)
 
 	botInstance := bot.NewTelegramBot(telegramBot, handlers, log)
 
