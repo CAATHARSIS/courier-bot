@@ -63,20 +63,8 @@ func (km *KeyboardManager) CreateMainMenuKeyboard() tgbotapi.ReplyKeyboardMarkup
 			tgbotapi.NewKeyboardButton("ℹ️ Статус"),
 		),
 		tgbotapi.NewKeyboardButtonRow(
-			tgbotapi.NewKeyboardButton("⚙️ Настройки"),
+			tgbotapi.NewKeyboardButton("⚙️ Смена"),
 			tgbotapi.NewKeyboardButton("🆘 Помощь"),
-		),
-	)
-}
-
-func (km *KeyboardManager) CreateSettingsKeyboard() tgbotapi.InlineKeyboardMarkup {
-	return tgbotapi.NewInlineKeyboardMarkup(
-		tgbotapi.NewInlineKeyboardRow(
-			tgbotapi.NewInlineKeyboardButtonData("Режим работы", "settings_workmode"),
-		),
-		tgbotapi.NewInlineKeyboardRow(
-			tgbotapi.NewInlineKeyboardButtonData("Контакты", "settings_contacts"),
-			tgbotapi.NewInlineKeyboardButtonData("↩️ Назад", "menu_main"),
 		),
 	)
 }
@@ -204,11 +192,9 @@ func (km *KeyboardManager) GetActionFromCallback(callback string) string {
 		ActionComplete,
 		ActionNavigate,
 		ActionCall,
-		ActionSettings,
+		ActionWorkmode,
 		ActionRefresh,
 		ActionMenu,
-		ActionOrderDetails,
-		ActionBackToOrder,
 		ActionChangeWorkmode,
 	}
 

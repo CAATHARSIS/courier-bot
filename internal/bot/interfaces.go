@@ -29,7 +29,6 @@ type KeyboardManagerInterface interface {
 	CreateAssignmentKeyboard(orderID int) tgbotapi.InlineKeyboardMarkup
 	CreateDeliveryKeyboard(orderID int, address, phone string) tgbotapi.InlineKeyboardMarkup
 	CreateMainMenuKeyboard() tgbotapi.ReplyKeyboardMarkup
-	CreateSettingsKeyboard() tgbotapi.InlineKeyboardMarkup
 	CreateConfirmationKeyboard(action string, data interface{}) tgbotapi.InlineKeyboardMarkup
 	CreateOrderListKeyboard(orders []OrderListItem) tgbotapi.InlineKeyboardMarkup
 	CreateYesNoKeyboard(action string, id int) tgbotapi.InlineKeyboardMarkup
@@ -85,7 +84,7 @@ const (
 	// Utility Actions
 	ActionNavigate       = "nav"
 	ActionCall           = "call"
-	ActionSettings       = "settings"
+	ActionWorkmode      = "workmode"
 	ActionCancel         = "cancel"
 	ActionRefresh        = "refresh"
 	ActionMenu           = "menu"
@@ -94,10 +93,6 @@ const (
 	// Sub-actions
 	ActionOrderDetails = "order_details"
 	ActionBackToOrder  = "back_to_order"
-
-	// Settings Sub-types
-	SettingsWorkmode = "settings_workmode"
-	SettingsContacts = "settings_contacts"
 
 	// Menu Sub-types
 	MenuMain = "menu_main"

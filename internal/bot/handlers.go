@@ -61,8 +61,8 @@ func (h *Handlers) HandleMessage(ctx context.Context, bot BotInterface, update t
 		h.HandleMyOrdersCommand(ctx, bot, chatID)
 	case "/status", "ℹ️ Статус":
 		h.HandleStatusCommand(bot, chatID)
-	case "/settings", "⚙️ Настройки":
-		h.HandleSettingsCommand(bot, chatID)
+	case "/settings", "⚙️ Смена":
+		h.HandleWorkmodeSettings(ctx, bot, chatID)
 	default:
 		h.HandleUnknownCommand(bot, chatID)
 	}
@@ -109,8 +109,6 @@ func (h *Handlers) HandleCallback(ctx context.Context, bot BotInterface, update 
 		h.HandleNavigation(bot, chatID, callbackData)
 	case ActionCall:
 		h.HandleCallCustomer(bot, chatID, callbackData)
-	case ActionSettings:
-		h.HandleSettings(ctx, bot, chatID, callbackData)
 	case ActionRefresh:
 		h.HandleRefresh(ctx, bot, chatID, callbackData)
 	case ActionMenu:
@@ -237,6 +235,25 @@ func (h *Handlers) HandleMyOrdersCommand(ctx context.Context, bot BotInterface, 
 	bot.SendMessageWithInlineKeyboard(chatID, message, keyboard)
 }
 
+func (h *Handlers) HandleWorkmodeSettings(ctx context.Context, bot BotInterface, chatID int64) {
+	isActive := "*Не Активен*"
+	courier, err := h.assignmentManager.GetCourierByChatID(ctx, chatID)
+	if err != nil {
+		h.log.Error("Failed to get courier by chat ID", "error", err)
+		bot.SendMessage(chatID, "Ошибка на стороне сервера, попробуйте позже ⌛")
+		return
+	}
+
+	if courier.IsActive {
+		isActive = "*Активен*"
+	}
+
+	message := fmt.Sprintf("Сейчас ваш статус: %s", isActive)
+	keyboard := h.keyboardManager.CreateChangeWorkmodeKeyboard(courier.IsActive)
+	bot.SendMessageWithInlineKeyboard(chatID, message, keyboard)
+}
+
+
 // ЭТО ЗАГЛУШКА, ЙОУ
 func (h *Handlers) HandleStatusCommand(bot BotInterface, chatID int64) {
 	message := "ℹ️ *Ваш статус*\n\n" +
@@ -246,14 +263,6 @@ func (h *Handlers) HandleStatusCommand(bot BotInterface, chatID int64) {
 		"Вы готовы принимать новые заказы! 🚀"
 
 	bot.SendMessage(chatID, message)
-}
-
-func (h *Handlers) HandleSettingsCommand(bot BotInterface, chatID int64) {
-	message := "⚙️ *Настройки*\n\n" +
-		"Выберите настройку для изменения:"
-
-	keyboard := h.keyboardManager.CreateSettingsKeyboard()
-	bot.SendMessageWithInlineKeyboard(chatID, message, keyboard)
 }
 
 func (h *Handlers) HandleUnknownCommand(bot BotInterface, chatID int64) {
@@ -430,30 +439,22 @@ func (h *Handlers) HandleCallCustomer(bot BotInterface, chatID int64, callbackDa
 	bot.SendMessageWithInlineKeyboard(chatID, message, keyboard)
 }
 
-func (h *Handlers) HandleSettings(ctx context.Context, bot BotInterface, chatID int64, callbackData string) {
-	switch callbackData {
-	case SettingsWorkmode:
-		courier, err := h.assignmentManager.GetCourierByChatID(ctx, chatID)
-		if err != nil {
-			bot.SendMessage(chatID, "❌ Ошибка доступа")
-			return
-		}
-
-		isActiveText := "Активен"
-		if !courier.IsActive {
-			isActiveText = "Не активен"
-		}
-
-		msg := fmt.Sprintf("⚙️ *Текущий статус: %s*", isActiveText)
-
-		keyboard := h.keyboardManager.CreateChangeWorkmodeKeyboard(courier.IsActive)
-		bot.SendMessageWithInlineKeyboard(chatID, msg, keyboard)
-	case SettingsContacts:
-		keyboard := h.keyboardManager.CreateBackToSettingsKeyboard()
-		bot.SendMessageWithInlineKeyboard(chatID, "Контактная информация...\nУбрать может э", keyboard)
-	default:
-		h.HandleSettingsCommand(bot, chatID)
+func (h *Handlers) HandleSettings(ctx context.Context, bot BotInterface, chatID int64) {
+	courier, err := h.assignmentManager.GetCourierByChatID(ctx, chatID)
+	if err != nil {
+		bot.SendMessage(chatID, "❌ Ошибка доступа")
+		return
 	}
+
+	isActiveText := "Активен"
+	if !courier.IsActive {
+		isActiveText = "Не активен"
+	}
+
+	msg := fmt.Sprintf("⚙️ *Текущий статус: %s*", isActiveText)
+
+	keyboard := h.keyboardManager.CreateChangeWorkmodeKeyboard(courier.IsActive)
+	bot.SendMessageWithInlineKeyboard(chatID, msg, keyboard)
 }
 
 func (h *Handlers) HandleRefresh(ctx context.Context, bot BotInterface, chatID int64, callbackData string) {
