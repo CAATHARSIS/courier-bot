@@ -122,7 +122,6 @@ func (h *Handlers) HandleStartCommand(bot BotInterface, chatID int64, user *tgbo
 			ChatID:     chatID,
 			Name:       user.FirstName + " " + user.LastName,
 			Phone:      "",
-			IsActive:   true,
 		}
 
 		h.assignmentManager.CreateCourier(context.Background(), newCourier)
@@ -383,6 +382,7 @@ func (h *Handlers) HandleSettings(ctx context.Context, bot BotInterface, chatID 
 		courier, err := h.assignmentManager.GetCourierByChatID(ctx, chatID)
 		if err != nil {
 			bot.SendMessage(chatID, "❌ Ошибка доступа")
+			return
 		}
 
 		isActiveText := "Активен"

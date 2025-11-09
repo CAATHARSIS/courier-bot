@@ -9,19 +9,58 @@ on:
       - master
   workflow_dispatch:
 
+env:
+  REGISTRY: docker.io
+  IMAGE_NAME: murl0ck/courier-bot
+
 jobs:
-  lint:
-    name: Lint Code
+  # lint:
+  #   name: Lint Code
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - name: Checkout
+  #       uses: actions/checkout@v5
+  #     - name: Set up go
+  #       uses: actions/setup-go@v5
+  #       with:
+  #         go-version: '1.25'
+  #     - name: Run golangci-lint
+  #       uses: golangci/golangci-lint-action@v8
+  #       with:
+  #         version: v2.4.0
+  #         args: --verbose
+  docker-build:
+    name: Build Docker Image
     runs-on: ubuntu-latest
+    # needs: [lint]
     steps:
       - name: Checkout
         uses: actions/checkout@v5
-      - name: Set up go
-        uses: actions/setup-go@v5
+      - name: Build Docker image
+        run: docker build -t $IMAGE_NAME:test .
+  
+  docker-publish:
+    name: Publish to Docker Hub
+    runs-on: ubuntu-latest
+    needs: docker-build
+    if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
         with:
-          go-version: '1.25'
-      - name: Run golangci-lint
-        uses: golangci/golangci-lint-action@v8
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      - name: Build and push
+        uses: docker/build-push-action@v6
         with:
-          version: v2.4.0
-          args: --verbose
+          context: .
+          push: true
+          tags: |
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest-arm64
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
+          cache-from: type=registry,ref=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:buildcache
+          cache-to: type=registry,ref=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:buildcache,mode=max

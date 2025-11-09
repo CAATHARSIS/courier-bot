@@ -8,7 +8,7 @@ RUN go mod download
 COPY . ./
 RUN GOOS=linux GOARCH=arm64 go build -o ./bin/app cmd/app/main.go
 
-FROM alpine AS runner
+FROM alpine:3.20 AS runner
 
 WORKDIR /app
 
