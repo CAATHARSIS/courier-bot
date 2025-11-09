@@ -23,16 +23,22 @@ func Load() *Config {
 	if err != nil {
 		slog.Warn("Warning: .env file not found")
 	}
+	
+	// local
+	// dbHost := "212.41.6.229"
+
+	// deploy
+	dbHost := "db"
 
 	return &Config{
-		DBHost:           getEnv("DB_HOST", "localhost"),
+		DBHost:           dbHost,
 		DBPort:           getEnv("DB_PORT", "5432"),
 		DBUserName:       getEnv("DB_USERNAME", "postgres"),
 		DBPassword:       getEnv("DB_PASSWORD", "postgres"),
 		DBName:           getEnv("DB_NAME", "courier-bot"),
 		AdminPassword:    getEnv("ADMIN_PASSWORD", ""),
 		TelegramBotToken: getEnv("TELEGRAM_BOT_TOKEN", ""),
-		BotPort:          getEnv("HTTP_ADDR", ":8080"),
+		BotPort:          getEnv("BOT_PORT", ":8080"),
 	}
 }
 
