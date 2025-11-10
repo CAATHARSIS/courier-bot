@@ -110,12 +110,6 @@ func (b *TelegramBot) AnswerCallbackQuery(callbackQueryID string) error {
 	return err
 }
 
-func (b *TelegramBot) AnswerCallbackQueryWithText(callbackQueryID, text string) error {
-	callback := tgbotapi.NewCallback(callbackQueryID, text)
-	_, err := b.api.Request(callback)
-	return err
-}
-
 func (b *TelegramBot) GetMe() (*tgbotapi.User, error) {
 	user, err := b.api.GetMe()
 	return &user, err

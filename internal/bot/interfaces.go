@@ -17,7 +17,6 @@ type BotInterface interface {
 	DeleteMessage(chatID int64, messageID int)
 
 	AnswerCallbackQuery(callbackQueryID string) error
-	AnswerCallbackQueryWithText(callbackQueryID, text string) error
 
 	GetMe() (*tgbotapi.User, error)
 	TestConnection() error
@@ -34,7 +33,6 @@ type KeyboardManagerInterface interface {
 	CreateYesNoKeyboard(action string, id int) tgbotapi.InlineKeyboardMarkup
 	CreateChangeWorkmodeKeyboard(isActive bool) tgbotapi.InlineKeyboardMarkup
 	CreateBackToOrderKeyboard(orderID int) tgbotapi.InlineKeyboardMarkup
-	CreateBackToSettingsKeyboard() tgbotapi.InlineKeyboardMarkup
 	RemoveKeyboard() tgbotapi.ReplyKeyboardRemove
 
 	GetActionFromCallback(callbackData string) string
@@ -84,8 +82,7 @@ const (
 	// Utility Actions
 	ActionNavigate       = "nav"
 	ActionCall           = "call"
-	ActionWorkmode      = "workmode"
-	ActionCancel         = "cancel"
+	ActionWorkmode       = "workmode"
 	ActionRefresh        = "refresh"
 	ActionMenu           = "menu"
 	ActionChangeWorkmode = "change_workmode"

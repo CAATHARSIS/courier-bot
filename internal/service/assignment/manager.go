@@ -217,6 +217,8 @@ func (m *Manager) HandleCourierResponse(ctx context.Context, chatID int64, order
 	if time.Now().After(waiting.ExpiredAt) {
 		m.sendSimpleNotification(chatID, "⏰ Время для принятия заказа истекло")
 		m.updateWaitingOrderStatus(orderID, false)
+		statusExpired := models.ResponseStatusExpired
+		m.UpdateOrderAssignmentStatust(ctx, orderID, statusExpired)
 		return fmt.Errorf("assignment timeout for order %d", orderID)
 	}
 
@@ -767,4 +769,8 @@ func (m *Manager) GetWaitingAssignmentsByCourierID(ctx context.Context, coureirI
 
 func (m *Manager) GetWaitingAssignmentsByOrderID(ctx context.Context, orderID int) (*models.OrderAssignment, error) {
 	return m.repo.OrderAssignment.GetWiatingByOrderID(ctx, orderID)
+}
+
+func (m *Manager) UpdateOrderAssignmentStatust(ctx context.Context, id int, status models.CourierResponseStatus) error {
+	return m.repo.OrderAssignment.UpdateStatus(ctx, id, status)
 }

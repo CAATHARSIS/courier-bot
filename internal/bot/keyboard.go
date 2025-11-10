@@ -122,7 +122,7 @@ func (km *KeyboardManager) CreateChangeWorkmodeKeyboard(isActive bool) tgbotapi.
 			tgbotapi.NewInlineKeyboardButtonData(changeMsg, fmt.Sprintf("change_workmode_%t", isActive)),
 		),
 		tgbotapi.NewInlineKeyboardRow(
-			tgbotapi.NewInlineKeyboardButtonData("↩️ Назад", "settings"),
+			tgbotapi.NewInlineKeyboardButtonData("↩️ Назад", "menu"),
 		),
 	)
 }
@@ -131,14 +131,6 @@ func (km *KeyboardManager) CreateBackToOrderKeyboard(orderID int) tgbotapi.Inlin
 	return tgbotapi.NewInlineKeyboardMarkup(
 		tgbotapi.NewInlineKeyboardRow(
 			tgbotapi.NewInlineKeyboardButtonData("↩️ Назад", fmt.Sprintf("back_to_order_%d", orderID)),
-		),
-	)
-}
-
-func (km *KeyboardManager) CreateBackToSettingsKeyboard() tgbotapi.InlineKeyboardMarkup {
-	return tgbotapi.NewInlineKeyboardMarkup(
-		tgbotapi.NewInlineKeyboardRow(
-			tgbotapi.NewInlineKeyboardButtonData("↩️ Назад", "settings"),
 		),
 	)
 }
@@ -196,6 +188,7 @@ func (km *KeyboardManager) GetActionFromCallback(callback string) string {
 		ActionRefresh,
 		ActionMenu,
 		ActionChangeWorkmode,
+		ActionOrderDetails,
 	}
 
 	for _, prefix := range prefixes {

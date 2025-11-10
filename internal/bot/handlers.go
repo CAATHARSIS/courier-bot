@@ -52,6 +52,15 @@ func (h *Handlers) HandleMessage(ctx context.Context, bot BotInterface, update t
 
 	h.log.Info("Received message", "From", chatID, "Message", text)
 
+	if update.Message.Location != nil {
+		h.HandleLocation(ctx, bot, chatID, update.Message.Location.Latitude, update.Message.Location.Longitude)
+		return
+	}
+
+	if text == "" {
+		return
+	}
+
 	switch text {
 	case "/start":
 		h.HandleStartCommand(bot, chatID, update.Message.From)
@@ -63,6 +72,8 @@ func (h *Handlers) HandleMessage(ctx context.Context, bot BotInterface, update t
 		h.HandleStatusCommand(bot, chatID)
 	case "/settings", "⚙️ Смена":
 		h.HandleWorkmodeSettings(ctx, bot, chatID)
+	case "❌ Отмена":
+		h.HandleStartCommand(bot, chatID, update.Message.From)
 	default:
 		h.HandleUnknownCommand(bot, chatID)
 	}
@@ -253,7 +264,6 @@ func (h *Handlers) HandleWorkmodeSettings(ctx context.Context, bot BotInterface,
 	bot.SendMessageWithInlineKeyboard(chatID, message, keyboard)
 }
 
-
 // ЭТО ЗАГЛУШКА, ЙОУ
 func (h *Handlers) HandleStatusCommand(bot BotInterface, chatID int64) {
 	message := "ℹ️ *Ваш статус*\n\n" +
@@ -284,7 +294,7 @@ func (h *Handlers) HandleAcceptOrder(ctx context.Context, bot BotInterface, chat
 
 	h.log.Info("Courier accepting order", "chatID", chatID, "orderID", orderID)
 
-	bot.AnswerCallbackQueryWithText("", "✅ Принимаем заказ...")
+	bot.DeleteMessage(chatID, messageID)
 
 	err = h.assignmentManager.HandleCourierResponse(ctx, chatID, orderID, true)
 	if err != nil {
@@ -533,24 +543,64 @@ func (h *Handlers) HandleChangeWorkmode(ctx context.Context, bot BotInterface, c
 		return
 	}
 
-	err = h.assignmentManager.UpdateCourierStatusIsActive(ctx, chatID, isActiveStatus)
-	if err != nil {
-		bot.SendMessage(chatID, "Ошибка на стороне сервера, попробуйте позже ⌛")
-		return
-	}
+	if !isActiveStatus {
+		message := "🚗 *Начало смены*\n\n" +
+			"Для начала работы отправьте ваше текущее местоположение:\n\n" +
+			"1. Нажмите на скрепку 📎 рядом с полем ввода\n" +
+			"2. Выберите «Геолокация»\n" +
+			"3. Отправьте ваши геоданные\n\n" +
+			"После этого ваша смена будет активирована."
 
-	var secondPartMsg string
-	if isActiveStatus {
-		secondPartMsg = "Поменяйте статус в настройках на *\"активен\"*, когда захотите вернуться к работе"
+		keyboard := tgbotapi.NewReplyKeyboard(
+			tgbotapi.NewKeyboardButtonRow(
+				tgbotapi.NewKeyboardButton("❌ Отмена"),
+			),
+		)
+
+		bot.SendMessageWithKeyboard(chatID, message, keyboard)
 	} else {
-		secondPartMsg = "Теперь ваш статус *\"активен\"*, ждите уведомлений о новых заказах"
-	}
-	msg := "📝 Ваш статус успешно измен\n\n" + secondPartMsg
+		err = h.assignmentManager.UpdateCourierStatusIsActive(ctx, chatID, isActiveStatus)
+		if err != nil {
+			bot.SendMessage(chatID, "Ошибка на стороне сервера, попробуйте позже ⌛")
+			return
+		}
 
-	bot.SendMessage(chatID, msg)
+		message := "Теперь ваш стутус: *Не Активен*\n\nВы не отслеживаетесь системой и не будете получать новые заказы"
+		bot.SendMessage(chatID, message)
+	}
 }
 
 // UTILITY METHODS
+
+func (h *Handlers) HandleLocation(ctx context.Context, bot BotInterface, chatID int64, latitude, longitude float64) {
+	h.log.Info("Received location", "chatID", chatID, "lat", latitude, "lon", longitude)
+
+	// ВАЖНО
+	// Сохранение локи в бд
+
+	h.keyboardManager.RemoveKeyboard()
+
+	if err := h.assignmentManager.UpdateCourierStatusIsActive(ctx, chatID, false); err != nil {
+		h.log.Error("Failed to activate courier", "chatID", chatID, "error", err)
+		bot.SendMessage(chatID, "❌ Ошибка активации смены")
+		return
+	}
+
+	message := fmt.Sprintf(
+		"🚗 *Смена начата!*\n\n" +
+			"📍 Местоположение сохранено\n" +
+			"✅ Вы активны и готовы к работе\n\n" +
+			"Ожидайте уведомления о новых заказах! 📦",
+	)
+
+	keyboard := h.keyboardManager.CreateMainMenuKeyboard()
+	bot.SendMessageWithKeyboard(chatID, message, keyboard)
+}
+
+func (h *Handlers) HandleCancel(bot BotInterface, chatID int64) {
+	keyboard := h.keyboardManager.CreateMainMenuKeyboard()
+	bot.SendMessageWithKeyboard(chatID, "❌ Действие отменено", keyboard)
+}
 
 func (h *Handlers) ExtractOrderID(callbackData string) (int, error) {
 	parts := strings.Split(callbackData, "_")
