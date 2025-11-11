@@ -93,7 +93,7 @@ func main() {
 	})
 
 	server := &http.Server{
-		Addr:         cfg.BotPort,
+		Addr:         ":" + cfg.BotPort,
 		Handler:      mux,
 		ReadTimeout:  10 * time.Second,
 		WriteTimeout: 10 * time.Second,
