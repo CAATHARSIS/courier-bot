@@ -1,10 +1,10 @@
 package config
 
 import (
-	"log/slog"
+	// "log/slog"
 	"os"
 
-	"github.com/joho/godotenv"
+	// "github.com/joho/godotenv"
 )
 
 type Config struct {
@@ -19,9 +19,9 @@ type Config struct {
 }
 
 func Load() *Config {
-	if err := godotenv.Load("../../.env"); err != nil {
-		slog.Warn("Warning: .env file not found")
-	}
+	// if err := godotenv.Load(); err != nil {
+	// 	slog.Warn("Warning: .env file not found")
+	// }
 	
 	// local
 	// dbHost := "212.41.6.229"
