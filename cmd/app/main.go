@@ -27,19 +27,19 @@ func main() {
 	log := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug}))
 	log.Info("Debug messages are enable")
 
-	migrationDB, err := database.NewPostgresDB(cfg)
-	if err != nil {
-		log.Error("Failed to connect to database", "error", err)
-		os.Exit(1)
-	}
+	// migrationDB, err := database.NewPostgresDB(cfg)
+	// if err != nil {
+	// 	log.Error("Failed to connect to database", "error", err)
+	// 	os.Exit(1)
+	// }
 
-	if err := database.RunMigrations(migrationDB, log); err != nil {
-		log.Error("Failed to run migrations", "error", err)
-		if err := migrationDB.Close(); err != nil {
-			log.Error("Failed to close migration db", "error", err)
-		}
-		os.Exit(1)
-	}
+	// if err := database.RunMigrations(migrationDB, log); err != nil {
+	// 	log.Error("Failed to run migrations", "error", err)
+	// 	if err := migrationDB.Close(); err != nil {
+	// 		log.Error("Failed to close migration db", "error", err)
+	// 	}
+	// 	os.Exit(1)
+	// }
 
 	appDB, err := database.NewPostgresDB(cfg)
 	if err != nil {
