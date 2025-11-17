@@ -42,13 +42,11 @@ func (r *courierRepository) Create(ctx context.Context, courier *models.Courier)
 	err := r.db.QueryRowContext(
 		ctx,
 		query,
-		courier.TelegramID,
 		courier.ChatID,
 		courier.Name,
 		courier.Phone,
 		courier.IsActive,
 		courier.LastSeen,
-		courier.CurrentOrderID,
 		courier.Rating,
 		time.Now(),
 	).Scan(&courier.ID)
@@ -81,13 +79,11 @@ func (r *courierRepository) GetByID(ctx context.Context, id int) (*models.Courie
 
 	err := r.db.QueryRowContext(ctx, query, id).Scan(
 		&courier.ID,
-		&courier.TelegramID,
 		&courier.ChatID,
 		&courier.Name,
 		&courier.Phone,
 		&courier.IsActive,
 		&courier.LastSeen,
-		&courier.CurrentOrderID,
 		&courier.Rating,
 		&courier.CreatedAt,
 	)
@@ -135,10 +131,6 @@ func (r *courierRepository) Update(ctx context.Context, courier *models.Courier)
 		return nil, fmt.Errorf("invalid courier id: %v", err)
 	}
 
-	if courier.TelegramID == 0 {
-		courier.TelegramID = oldCourier.TelegramID
-	}
-
 	if courier.ChatID == 0 {
 		courier.ChatID = oldCourier.ChatID
 	}
@@ -164,24 +156,20 @@ func (r *courierRepository) Update(ctx context.Context, courier *models.Courier)
 	err = r.db.QueryRowContext(
 		ctx,
 		query,
-		courier.TelegramID,
 		courier.ChatID,
 		courier.Name,
 		courier.Phone,
 		courier.IsActive,
 		courier.LastSeen,
-		courier.CurrentOrderID,
 		courier.Rating,
 		courier.CreatedAt,
 	).Scan(
 		&updatedCourier.ID,
-		&updatedCourier.TelegramID,
 		&updatedCourier.ChatID,
 		&updatedCourier.Name,
 		&updatedCourier.Phone,
 		&updatedCourier.IsActive,
 		&updatedCourier.LastSeen,
-		&updatedCourier.CurrentOrderID,
 		&updatedCourier.Rating,
 		&updatedCourier.CreatedAt,
 	)
@@ -240,13 +228,11 @@ func (r *courierRepository) List(ctx context.Context) ([]*models.Courier, error)
 
 		err := rows.Scan(
 			&courier.ID,
-			&courier.TelegramID,
 			&courier.ChatID,
 			&courier.Name,
 			&courier.Phone,
 			&courier.IsActive,
 			&courier.LastSeen,
-			&courier.CurrentOrderID,
 			&courier.Rating,
 			&courier.CreatedAt,
 		)
@@ -297,13 +283,11 @@ func (r *courierRepository) GetActiveCouriers(ctx context.Context) ([]*models.Co
 
 		err := rows.Scan(
 			&activeCourier.ID,
-			&activeCourier.TelegramID,
 			&activeCourier.ChatID,
 			&activeCourier.Name,
 			&activeCourier.Phone,
 			&activeCourier.IsActive,
 			&activeCourier.LastSeen,
-			&activeCourier.CurrentOrderID,
 			&activeCourier.Rating,
 			&activeCourier.CreatedAt,
 		)
@@ -344,13 +328,11 @@ func (r *courierRepository) GetByChatID(ctx context.Context, chatID int64) (*mod
 
 	err := r.db.QueryRowContext(ctx, query, chatID).Scan(
 		&courier.ID,
-		&courier.TelegramID,
 		&courier.ChatID,
 		&courier.Name,
 		&courier.Phone,
 		&courier.IsActive,
 		&courier.LastSeen,
-		&courier.CurrentOrderID,
 		&courier.Rating,
 		&courier.CreatedAt,
 	)

@@ -144,7 +144,6 @@ func (h *Handlers) HandleStartCommand(bot BotInterface, chatID int64, user *tgbo
 
 	if !h.assignmentManager.CheckCourierByChatID(context.Background(), chatID) {
 		newCourier := &models.Courier{
-			TelegramID: user.ID,
 			ChatID:     chatID,
 			Name:       user.FirstName + " " + user.LastName,
 			Phone:      "",
@@ -551,7 +550,7 @@ func (h *Handlers) HandleChangeWorkmode(ctx context.Context, bot BotInterface, c
 		message := "🚗 *Начало смены*\n\n" +
 			"Для начала работы отправьте ваше текущее местоположение:\n\n" +
 			"1. Нажмите на скрепку 📎 рядом с полем ввода\n" +
-			"2. Выберите «Геолопозиция»\n" +
+			"2. Выберите «Геопозиция»\n" +
 			"3. Отправьте ваши геоданные\n\n" +
 			"После этого ваша смена будет активирована."
 
