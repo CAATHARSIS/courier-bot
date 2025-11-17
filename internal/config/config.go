@@ -1,10 +1,11 @@
 package config
 
 import (
-	// "log/slog"
+	"flag"
+	"log/slog"
 	"os"
 
-	// "github.com/joho/godotenv"
+	"github.com/joho/godotenv"
 )
 
 type Config struct {
@@ -16,18 +17,24 @@ type Config struct {
 	AdminPassword    string
 	TelegramBotToken string
 	BotPort          string
+	Local            bool
 }
 
 func Load() *Config {
-	// if err := godotenv.Load(); err != nil {
-	// 	slog.Warn("Warning: .env file not found")
-	// }
-	
-	// local
-	// dbHost := "212.41.6.229"
+	local := flag.Bool("local", false, "Using for local development")
+	flag.Parse()
 
-	// deploy
-	dbHost := "db"
+	var dbHost string
+
+	if *local {
+		if err := godotenv.Load("../../.env"); err != nil {
+			slog.Warn("Warning: .env file not found")
+		}
+
+		dbHost = "212.41.6.229"
+	} else {
+		dbHost = "db"
+	}
 
 	return &Config{
 		DBHost:           dbHost,
@@ -37,7 +44,8 @@ func Load() *Config {
 		DBName:           getEnv("DB_NAME", "courier-bot"),
 		AdminPassword:    getEnv("ADMIN_PASSWORD", ""),
 		TelegramBotToken: getEnv("TELEGRAM_BOT_TOKEN", ""),
-		BotPort:          getEnv("BOT_PORT", ":8080"),
+		BotPort:          getEnv("BOT_PORT", "8080"),
+		Local:            *local,
 	}
 }
 

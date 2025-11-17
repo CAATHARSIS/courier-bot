@@ -27,28 +27,32 @@ func main() {
 	log := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug}))
 	log.Info("Debug messages are enable")
 
-	// migrationDB, err := database.NewPostgresDB(cfg)
-	// if err != nil {
-	// 	log.Error("Failed to connect to database", "error", err)
-	// 	os.Exit(1)
-	// }
+	migrationDB, err := database.NewPostgresDB(cfg)
+	if err != nil {
+		log.Error("Failed to connect to database", "error", err)
+		os.Exit(1)
+	}
 
-	// if err := database.RunMigrations(migrationDB, log); err != nil {
-	// 	log.Error("Failed to run migrations", "error", err)
-	// 	if err := migrationDB.Close(); err != nil {
-	// 		log.Error("Failed to close migration db", "error", err)
-	// 	}
-	// 	os.Exit(1)
-	// }
+	if err := database.RunMigrations(migrationDB, log, cfg); err != nil {
+		log.Error("Failed to run migrations", "error", err)
+		os.Exit(1)
+	}
+
+	if err := migrationDB.Close(); err != nil {
+		log.Error("Failed to close app db", "error", err)
+	}
 
 	appDB, err := database.NewPostgresDB(cfg)
 	if err != nil {
 		log.Error("Failed to connect to database", "error", err)
+		os.Exit(1)
+	}
+
+	defer func() {
 		if err := appDB.Close(); err != nil {
 			log.Error("Failed to close app db", "error", err)
 		}
-		os.Exit(1)
-	}
+	}()
 
 	repo := repository.NewRepository(appDB)
 
@@ -73,7 +77,7 @@ func main() {
 	webhookHandler := delivery.NewWebhookHandler(assignmentManager, cfg.AdminPassword, log)
 
 	keyboardManager := bot.NewkeyboardManager(log)
-	handlers := bot.NewHandlers(assignmentManager, keyboardManager, cfg.AdminPassword, log)
+	handlers := bot.NewHandlers(assignmentManager, keyboardManager, cfg.AdminPassword, log, cfg.Local)
 
 	botInstance := bot.NewTelegramBot(telegramBot, handlers, log)
 

@@ -5,19 +5,28 @@ import (
 	"fmt"
 	"log/slog"
 
+	"github.com/CAATHARSIS/courier-bot/internal/config"
 	"github.com/golang-migrate/migrate/v4"
 	"github.com/golang-migrate/migrate/v4/database/postgres"
 	_ "github.com/golang-migrate/migrate/v4/source/file"
 )
 
-func RunMigrations(db *sql.DB, log *slog.Logger) error {
+func RunMigrations(db *sql.DB, log *slog.Logger, cfg *config.Config) error {
 	driver, err := postgres.WithInstance(db, &postgres.Config{})
 	if err != nil {
 		return fmt.Errorf("failed to create migration runner: %v", err)
 	}
 
+	var pathToMigrations string
+
+	if cfg.Local {
+		pathToMigrations = "file://../../migrations"
+	} else {
+		pathToMigrations = "file://migrations"
+	}
+
 	m, err := migrate.NewWithDatabaseInstance(
-		"file://../../migrations",
+		pathToMigrations,
 		"postgres",
 		driver,
 	)

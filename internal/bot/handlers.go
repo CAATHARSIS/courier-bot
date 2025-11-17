@@ -21,14 +21,16 @@ type Handlers struct {
 	keyboardManager   KeyboardManagerInterface
 	webhookSecret     string
 	log               *slog.Logger
+	local             bool
 }
 
-func NewHandlers(assignmentManager *assignment.Manager, keyboardManager KeyboardManagerInterface, webhookSecret string, log *slog.Logger) *Handlers {
+func NewHandlers(assignmentManager *assignment.Manager, keyboardManager KeyboardManagerInterface, webhookSecret string, log *slog.Logger, local bool) *Handlers {
 	return &Handlers{
 		assignmentManager: assignmentManager,
 		keyboardManager:   keyboardManager,
 		webhookSecret:     webhookSecret,
 		log:               log,
+		local:             local,
 	}
 }
 
@@ -349,11 +351,13 @@ func (h *Handlers) HandleCompleteOrder(ctx context.Context, bot BotInterface, ch
 		return
 	}
 
-	// local
-	// host := "https://shaurma-jan.ru"
+	var host string
 
-	// deploy
-	host := "app:8080"
+	if h.local {
+		host = "https://shaurma-jan.ru"
+	} else {
+		host = "app:8080"
+	}
 
 	deliveryURL := fmt.Sprintf("%s/v1/admin/delivery/%d", host, orderID)
 
