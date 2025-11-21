@@ -10,4 +10,5 @@ type Order interface {
 	GetByID(ctx context.Context, id int) (*models.Order, error)
 	UpdateCourierID(ctx context.Context, id int, courierID int) error
 	GetActiveOrdersByCourier(ctx context.Context, courierID int) ([]models.Order, error)
+	GetShopLocation(ctx context.Context, id int) (models.CourierLocation, error)
 }

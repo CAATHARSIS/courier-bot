@@ -7,6 +7,7 @@ import (
 
 type Order struct {
 	ID                     int            `json:"id"`
+	ShopID                 int            `json:"shop_id"`
 	UserID                 int            `json:"user_id"`
 	Name                   string         `json:"name"`
 	PhoneNumber            string         `json:"phone_number"`

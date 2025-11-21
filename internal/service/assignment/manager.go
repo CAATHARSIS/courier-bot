@@ -108,9 +108,19 @@ func (m *Manager) ProcessNewOrder(ctx context.Context, orderID int) error {
 func (m *Manager) findAndAssignCourier(ctx context.Context, orderID int) (*AssignmentResult, error) {
 	m.log.Debug("Searching for available courier for order", "orderID", orderID)
 
-	couriers, err := m.repo.Courier.GetActiveCouriers(ctx)
+	order, err := m.repo.Order.GetByID(ctx, orderID)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get active couriers: %v", err)
+		return nil, fmt.Errorf("failed to get order by id: %v", err)
+	}
+
+	shopLoc, err := m.repo.Order.GetShopLocation(ctx, order.ShopID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get shop location, orderID(#%d): %v", orderID, err)
+	}
+
+	couriers, err := m.repo.Courier.GetNearestCouriersInRadius(ctx, shopLoc, 50)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get active nearest couriers: %v", err)
 	}
 
 	if len(couriers) == 0 {

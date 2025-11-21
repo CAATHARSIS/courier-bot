@@ -5,7 +5,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"log"
 	"log/slog"
 	"net/http"
 	"strconv"
@@ -159,7 +158,6 @@ func (h *Handlers) HandleCallback(ctx context.Context, bot BotInterface, update 
 	case ActionChangeWorkmode:
 		h.HandleChangeWorkmode(ctx, bot, chatID, callbackData)
 	default:
-		log.Println(action)
 		h.HandleUnknownCommand(bot, chatID)
 	}
 }
@@ -600,8 +598,6 @@ func (h *Handlers) HandleChangeWorkmode(ctx context.Context, bot BotInterface, c
 
 	switch {
 	case actual && !isActiveStatus:
-		log.Println(actual, !isActiveStatus, time.Now().UTC().Sub(courier.LastUpdated), time.Now().UTC(), courier.LastUpdated)
-
 		if err := h.assignmentManager.UpdateCourierStatusIsActive(ctx, chatID, false); err != nil {
 			h.log.Error("Failed to activate courier", "chatID", chatID, "error", err)
 			bot.SendMessage(chatID, "❌ Ошибка активации смены")

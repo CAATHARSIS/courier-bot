@@ -18,4 +18,5 @@ type CourierRepository interface {
 	UpdateLocation(ctx context.Context, chatID int64, location models.CourierLocation) error
 	UpdateTrackingMode(ctx context.Context, chatID int64, trackingMode bool) error
 	GetIsActiveStatus(ctx context.Context, chatID int64) (bool, error)
+	GetNearestCouriersInRadius(ctx context.Context, target models.CourierLocation, radiusKm float64) ([]models.Courier, error)
 }

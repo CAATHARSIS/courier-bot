@@ -21,6 +21,7 @@ func (r *orderRepository) GetByID(ctx context.Context, id int) (*models.Order, e
 	query := `
 		SELECT
 			id,
+			shop_id,
 			user_id,
 			name,
 			phone_number,
@@ -53,6 +54,7 @@ func (r *orderRepository) GetByID(ctx context.Context, id int) (*models.Order, e
 	var order models.Order
 	err := r.db.QueryRowContext(ctx, query, id).Scan(
 		&order.ID,
+		&order.ShopID,
 		&order.UserID,
 		&order.Name,
 		&order.PhoneNumber,
@@ -108,6 +110,7 @@ func (r *orderRepository) GetActiveOrdersByCourier(ctx context.Context, courierI
 	query := `
 		SELECT
 			id,
+			shop_id,
 			user_id,
 			name,
 			phone_number,
@@ -159,6 +162,7 @@ func (r *orderRepository) GetActiveOrdersByCourier(ctx context.Context, courierI
 
 		err := rows.Scan(
 			&order.ID,
+			&order.ShopID,
 			&order.UserID,
 			&order.Name,
 			&order.PhoneNumber,
@@ -195,4 +199,25 @@ func (r *orderRepository) GetActiveOrdersByCourier(ctx context.Context, courierI
 	}
 
 	return orders, nil
+}
+
+func (r orderRepository) GetShopLocation(ctx context.Context, id int) (models.CourierLocation, error) {
+	query := `
+		SELECT
+			lat,
+			long
+		FROM
+			shops s
+			JOIN orders o ON (s.id = o.shop_id)
+		WHERE
+			o.id = $1
+	`
+
+	var loc models.CourierLocation
+	err := r.db.QueryRowContext(ctx, query, id).Scan(&loc.Latitude, &loc.Longitude)
+	if err != nil {
+		return loc, fmt.Errorf("failed to get shop location for order(#%d), error: %v", id, err) 
+	}
+
+	return loc, nil
 }
