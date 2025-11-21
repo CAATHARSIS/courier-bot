@@ -159,6 +159,7 @@ func (h *Handlers) HandleCallback(ctx context.Context, bot BotInterface, update 
 	case ActionChangeWorkmode:
 		h.HandleChangeWorkmode(ctx, bot, chatID, callbackData)
 	default:
+		log.Println(action)
 		h.HandleUnknownCommand(bot, chatID)
 	}
 }

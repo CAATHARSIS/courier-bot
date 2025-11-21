@@ -189,6 +189,7 @@ func (km *KeyboardManager) GetActionFromCallback(callback string) string {
 		ActionMenu,
 		ActionChangeWorkmode,
 		ActionOrderDetails,
+		ActionBackToOrder,
 	}
 
 	for _, prefix := range prefixes {
