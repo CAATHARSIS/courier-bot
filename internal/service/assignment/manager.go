@@ -247,7 +247,6 @@ func (m *Manager) HandleCourierResponse(ctx context.Context, chatID int64, order
 			return fmt.Errorf("failed to update order: %v", err)
 		}
 
-		m.repo.Courier.UpdateCurrentOrderID(ctx, chatID, orderID)
 		go m.sendDeliveryDetails(ctx, chatID, orderID)
 	} else {
 		go m.scheduleRetry(ctx, orderID)
@@ -773,4 +772,28 @@ func (m *Manager) GetWaitingAssignmentsByOrderID(ctx context.Context, orderID in
 
 func (m *Manager) UpdateOrderAssignmentStatust(ctx context.Context, id int, status models.CourierResponseStatus) error {
 	return m.repo.OrderAssignment.UpdateStatus(ctx, id, status)
+}
+
+func (m *Manager) UpdateCourierLocation(ctx context.Context, chatID int64, location models.CourierLocation) error {
+	return m.repo.Courier.UpdateLocation(ctx, chatID, location)
+}
+
+func (m *Manager) UpdateCourierTrackingMode(ctx context.Context, chatID int64, trackingMode bool) error {
+	return m.repo.Courier.UpdateTrackingMode(ctx, chatID, trackingMode)
+}
+
+func (m *Manager) UpdateCourierState(ctx context.Context, chatID int64, state models.CourierState) error {
+	if state.IsValid() {
+		return m.repo.Courier.UpdateState(ctx, chatID, state)
+	} else {
+		return fmt.Errorf("Invalid courier state for courier with chat id (#%d): %s", chatID, state)
+	}
+}
+
+func (m *Manager) GetCourierState(ctx context.Context, chatID int64) (models.CourierState, error) {
+	return m.repo.Courier.GetStateByChatID(ctx, chatID)
+}
+
+func (m *Manager) GetCourierIsActiveStatus(ctx context.Context, chatID int64) (bool, error) {
+	return m.repo.Courier.GetIsActiveStatus(ctx, chatID)
 }

@@ -1,0 +1,2 @@
+ALTER TABLE couriers
+ADD COLUMN IF NOT EXISTS tracking_mode BOOLEAN DEFAULT false;

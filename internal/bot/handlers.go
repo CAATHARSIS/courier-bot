@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"log"
 	"log/slog"
 	"net/http"
 	"strconv"
@@ -51,11 +52,25 @@ func (h *Handlers) HandleMessage(ctx context.Context, bot BotInterface, update t
 
 	chatID := update.Message.Chat.ID
 	text := update.Message.Text
+	location := update.Message.Location
 
-	h.log.Info("Received message", "From", chatID, "Message", text)
+	if text != "" {
+		h.log.Info("Received message", "From", chatID, "Message", text)
+	}
 
-	if update.Message.Location != nil {
+	if location != nil {
+		if location.LivePeriod > 0 && location.LivePeriod <= 28800 {
+			bot.SendMessage(chatID, "❌ Данная опция в боте не доступна")
+			return
+		}
 		h.HandleLocation(ctx, bot, chatID, update.Message.Location.Latitude, update.Message.Location.Longitude)
+
+		if location.LivePeriod == 0 {
+			h.assignmentManager.UpdateCourierTrackingMode(ctx, chatID, false)
+		} else {
+			h.assignmentManager.UpdateCourierTrackingMode(ctx, chatID, true)
+		}
+
 		return
 	}
 
@@ -81,6 +96,15 @@ func (h *Handlers) HandleMessage(ctx context.Context, bot BotInterface, update t
 	}
 }
 
+func (h *Handlers) HandleEditedMessage(ctx context.Context, bot BotInterface, update tgbotapi.Update) {
+	chatID := update.EditedMessage.Chat.ID
+
+	if update.EditedMessage.Location != nil {
+		h.HandleLocation(ctx, bot, chatID, update.EditedMessage.Location.Latitude, update.EditedMessage.Location.Longitude)
+		return
+	}
+}
+
 func (h *Handlers) HandleCallback(ctx context.Context, bot BotInterface, update tgbotapi.Update) {
 	if update.CallbackQuery == nil {
 		return
@@ -98,7 +122,9 @@ func (h *Handlers) HandleCallback(ctx context.Context, bot BotInterface, update 
 
 	callbackData := callback.Data
 
-	h.log.Info("Received callback", "chatID", chatID, "callbackData", callbackData, "messageID", callback.Message.MessageID)
+	if callbackData != "" {
+		h.log.Info("Received callback", "chatID", chatID, "callbackData", callbackData, "messageID", callback.Message.MessageID)
+	}
 
 	if bot == nil {
 		h.log.Error("Bot interface is nil in callback handler")
@@ -144,9 +170,9 @@ func (h *Handlers) HandleStartCommand(bot BotInterface, chatID int64, user *tgbo
 
 	if !h.assignmentManager.CheckCourierByChatID(context.Background(), chatID) {
 		newCourier := &models.Courier{
-			ChatID:     chatID,
-			Name:       user.FirstName + " " + user.LastName,
-			Phone:      "",
+			ChatID: chatID,
+			Name:   user.FirstName + " " + user.LastName,
+			Phone:  "",
 		}
 
 		h.assignmentManager.CreateCourier(context.Background(), newCourier)
@@ -392,6 +418,22 @@ func (h *Handlers) HandleCompleteOrder(ctx context.Context, bot BotInterface, ch
 	)
 
 	bot.SendMessage(chatID, message)
+
+	courier, err := h.assignmentManager.GetCourierByChatID(ctx, chatID)
+	if err != nil {
+		h.log.Error("Failed to get courier's tracking mode", "error", err)
+		bot.SendMessage(chatID, "❌ Ошибка обработки геолокации")
+	}
+
+	if !courier.TrackingMode {
+		message = "*Обновите вашу геолокацию для корректной работы бота:*\n\n" +
+			"1. Нажмите на скрепку 📎 рядом с полем ввода\n" +
+			"2. Выберите «Геопозиция»\n" +
+			"3. Отправьте ваши геоданные\n\n" +
+			"После этого ваша смена будет активирована."
+
+		bot.SendMessage(chatID, message)
+	}
 }
 
 func (h *Handlers) HandleNavigation(bot BotInterface, chatID int64, callbackData string) {
@@ -546,7 +588,35 @@ func (h *Handlers) HandleChangeWorkmode(ctx context.Context, bot BotInterface, c
 		return
 	}
 
-	if !isActiveStatus {
+	courier, err := h.assignmentManager.GetCourierByChatID(ctx, chatID)
+	if err != nil {
+		h.log.Error("Failed to get courier by chatID", "chatID", chatID, "error", err)
+		bot.SendMessage(chatID, "Ошибка на стороне сервера, попробуйте позже ⌛")
+		return
+	}
+
+	actual := time.Now().UTC().Sub(courier.LastUpdated) < 2*time.Minute
+
+	switch {
+	case actual && !isActiveStatus:
+		log.Println(actual, !isActiveStatus, time.Now().UTC().Sub(courier.LastUpdated), time.Now().UTC(), courier.LastUpdated)
+
+		if err := h.assignmentManager.UpdateCourierStatusIsActive(ctx, chatID, false); err != nil {
+			h.log.Error("Failed to activate courier", "chatID", chatID, "error", err)
+			bot.SendMessage(chatID, "❌ Ошибка активации смены")
+			return
+		}
+
+		message := fmt.Sprintf(
+			"🚗 *Смена начата!*\n\n" +
+				"📍 Местоположение сохранено\n" +
+				"✅ Вы активны и готовы к работе\n\n" +
+				"Ожидайте уведомления о новых заказах! 📦",
+		)
+
+		keyboard := h.keyboardManager.CreateMainMenuKeyboard()
+		bot.SendMessageWithKeyboard(chatID, message, keyboard)
+	case !isActiveStatus:
 		message := "🚗 *Начало смены*\n\n" +
 			"Для начала работы отправьте ваше текущее местоположение:\n\n" +
 			"1. Нажмите на скрепку 📎 рядом с полем ввода\n" +
@@ -561,9 +631,10 @@ func (h *Handlers) HandleChangeWorkmode(ctx context.Context, bot BotInterface, c
 		)
 
 		bot.SendMessageWithKeyboard(chatID, message, keyboard)
-	} else {
+	default:
 		err = h.assignmentManager.UpdateCourierStatusIsActive(ctx, chatID, isActiveStatus)
 		if err != nil {
+			h.log.Error("Failed to update courier status", "chatID", chatID, "error", err)
 			bot.SendMessage(chatID, "Ошибка на стороне сервера, попробуйте позже ⌛")
 			return
 		}
@@ -578,26 +649,44 @@ func (h *Handlers) HandleChangeWorkmode(ctx context.Context, bot BotInterface, c
 func (h *Handlers) HandleLocation(ctx context.Context, bot BotInterface, chatID int64, latitude, longitude float64) {
 	h.log.Info("Received location", "chatID", chatID, "lat", latitude, "lon", longitude)
 
-	// ВАЖНО
-	// Сохранение локи в бд
+	location := models.CourierLocation{
+		Longitude: longitude,
+		Latitude:  latitude,
+	}
 
-	h.keyboardManager.RemoveKeyboard()
-
-	if err := h.assignmentManager.UpdateCourierStatusIsActive(ctx, chatID, false); err != nil {
-		h.log.Error("Failed to activate courier", "chatID", chatID, "error", err)
-		bot.SendMessage(chatID, "❌ Ошибка активации смены")
+	err := h.assignmentManager.UpdateCourierLocation(ctx, chatID, location)
+	if err != nil {
+		h.log.Error("Failed to update courier location", "chatID", chatID, "error", err)
+		bot.SendMessage(chatID, "❌ Ошибка обновления геопозиции")
 		return
 	}
 
-	message := fmt.Sprintf(
-		"🚗 *Смена начата!*\n\n" +
-			"📍 Местоположение сохранено\n" +
-			"✅ Вы активны и готовы к работе\n\n" +
-			"Ожидайте уведомления о новых заказах! 📦",
-	)
+	isActive, err := h.assignmentManager.GetCourierIsActiveStatus(ctx, chatID)
+	if err != nil {
+		h.log.Error("Failed to get courier status", "chatID", chatID, "error", err)
+		bot.SendMessage(chatID, "❌ Ошибка обновления геопозиции")
+		return
+	}
 
-	keyboard := h.keyboardManager.CreateMainMenuKeyboard()
-	bot.SendMessageWithKeyboard(chatID, message, keyboard)
+	if !isActive {
+		h.keyboardManager.RemoveKeyboard()
+
+		if err := h.assignmentManager.UpdateCourierStatusIsActive(ctx, chatID, false); err != nil {
+			h.log.Error("Failed to activate courier", "chatID", chatID, "error", err)
+			bot.SendMessage(chatID, "❌ Ошибка активации смены")
+			return
+		}
+
+		message := fmt.Sprintf(
+			"🚗 *Смена начата!*\n\n" +
+				"📍 Местоположение сохранено\n" +
+				"✅ Вы активны и готовы к работе\n\n" +
+				"Ожидайте уведомления о новых заказах! 📦",
+		)
+
+		keyboard := h.keyboardManager.CreateMainMenuKeyboard()
+		bot.SendMessageWithKeyboard(chatID, message, keyboard)
+	}
 }
 
 func (h *Handlers) HandleCancel(bot BotInterface, chatID int64) {

@@ -44,9 +44,12 @@ func (b *TelegramBot) Start(ctx context.Context) {
 }
 
 func (b *TelegramBot) handleUpdate(ctx context.Context, update tgbotapi.Update) {
-	if update.Message != nil {
+	switch {
+	case update.Message != nil:
 		b.handlers.HandleMessage(ctx, b, update)
-	} else if update.CallbackQuery != nil {
+	case update.EditedMessage != nil:
+		b.handlers.HandleEditedMessage(ctx, b, update)
+	case update.CallbackQuery != nil:
 		b.handlers.HandleCallback(ctx, b, update)
 	}
 }

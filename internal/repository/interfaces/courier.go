@@ -9,12 +9,15 @@ import (
 type CourierRepository interface {
 	GetByID(ctx context.Context, id int) (*models.Courier, error)
 	Create(ctx context.Context, courier *models.Courier) error
-	Update(ctx context.Context, couier *models.Courier) (*models.Courier, error)
 	DeleteByID(ctx context.Context, id int) error
 	List(ctx context.Context) ([]*models.Courier, error)
 	GetActiveCouriers(ctx context.Context) ([]*models.Courier, error)
 	GetByChatID(ctx context.Context, chatID int64) (*models.Courier, error)
 	CheckCourierByChatID(ctx context.Context, chatID int64) bool
 	UpdateCourierStatusIsActive(ctx context.Context, chatID int64, currStatus bool) error
-	UpdateCurrentOrderID(ctx context.Context, chatID int64, orderID int) error
+	UpdateLocation(ctx context.Context, chatID int64, location models.CourierLocation) error
+	UpdateTrackingMode(ctx context.Context, chatID int64, trackingMode bool) error
+	UpdateState(ctx context.Context, chatID int64, state models.CourierState) error
+	GetStateByChatID(ctx context.Context, chatID int64) (models.CourierState, error)
+	GetIsActiveStatus(ctx context.Context, chatID int64) (bool, error)
 }
