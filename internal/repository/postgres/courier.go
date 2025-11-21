@@ -327,43 +327,6 @@ func (r courierRepository) UpdateTrackingMode(ctx context.Context, chatID int64,
 	return nil
 }
 
-func (r *courierRepository) UpdateState(ctx context.Context, chatID int64, state models.CourierState) error {
-	query := `
-		UPDATE couriers
-		SET
-			state = $1
-		WHERE
-			chat_id = $2
-	`
-
-	_, err := r.db.ExecContext(ctx, query, state, chatID)
-	if err != nil {
-		return fmt.Errorf("Failed to update state for courier with chatID #%d: %v", chatID, err)
-	}
-
-	return nil
-}
-
-func (r *courierRepository) GetStateByChatID(ctx context.Context, chatID int64) (models.CourierState, error) {
-	query := `
-		SELECT
-			state
-		FROM
-			couriers
-		WHERE
-			chat_id = $1
-	`
-
-	var state models.CourierState
-
-	err := r.db.QueryRowContext(ctx, query, chatID).Scan(&state)
-	if err != nil {
-		return "", fmt.Errorf("Failed to get state for courier with chatID #%d: %v", chatID, err)
-	}
-
-	return state, nil
-}
-
 func (r *courierRepository) GetIsActiveStatus(ctx context.Context, chatID int64) (bool, error) {
 	query :=  `
 		SELECT

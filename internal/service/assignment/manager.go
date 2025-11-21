@@ -782,18 +782,6 @@ func (m *Manager) UpdateCourierTrackingMode(ctx context.Context, chatID int64, t
 	return m.repo.Courier.UpdateTrackingMode(ctx, chatID, trackingMode)
 }
 
-func (m *Manager) UpdateCourierState(ctx context.Context, chatID int64, state models.CourierState) error {
-	if state.IsValid() {
-		return m.repo.Courier.UpdateState(ctx, chatID, state)
-	} else {
-		return fmt.Errorf("Invalid courier state for courier with chat id (#%d): %s", chatID, state)
-	}
-}
-
-func (m *Manager) GetCourierState(ctx context.Context, chatID int64) (models.CourierState, error) {
-	return m.repo.Courier.GetStateByChatID(ctx, chatID)
-}
-
 func (m *Manager) GetCourierIsActiveStatus(ctx context.Context, chatID int64) (bool, error) {
 	return m.repo.Courier.GetIsActiveStatus(ctx, chatID)
 }

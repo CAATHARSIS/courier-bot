@@ -1,0 +1,2 @@
+ALTER TABLE couriers
+DROP COLUMN IF EXISTS state;

@@ -17,7 +17,5 @@ type CourierRepository interface {
 	UpdateCourierStatusIsActive(ctx context.Context, chatID int64, currStatus bool) error
 	UpdateLocation(ctx context.Context, chatID int64, location models.CourierLocation) error
 	UpdateTrackingMode(ctx context.Context, chatID int64, trackingMode bool) error
-	UpdateState(ctx context.Context, chatID int64, state models.CourierState) error
-	GetStateByChatID(ctx context.Context, chatID int64) (models.CourierState, error)
 	GetIsActiveStatus(ctx context.Context, chatID int64) (bool, error)
 }
