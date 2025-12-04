@@ -17,4 +17,5 @@ type OrderAssignment interface {
 	UpdateStatus(ctx context.Context, id int, status models.CourierResponseStatus) error
 	GetWaitingByCourierID(ctx context.Context, courierID int) ([]models.OrderAssignment, error)
 	GetWiatingByOrderID(ctx context.Context, orderID int) (*models.OrderAssignment, error)
+	GetAmountOfAcceptedOrdersInOneDay(ctx context.Context, courierID int) (int, error)
 }

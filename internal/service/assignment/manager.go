@@ -791,3 +791,7 @@ func (m *Manager) UpdateCourierLocation(ctx context.Context, chatID int64, locat
 func (m *Manager) GetCourierIsActiveStatus(ctx context.Context, chatID int64) (bool, error) {
 	return m.repo.Courier.GetIsActiveStatus(ctx, chatID)
 }
+
+func (m *Manager) GetAmountOfAcceptedOrdersInOneDay(ctx context.Context, courierID int) (int, error) {
+	return m.repo.OrderAssignment.GetAmountOfAcceptedOrdersInOneDay(ctx, courierID)
+}

@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"time"
 
 	"github.com/CAATHARSIS/courier-bot/internal/models"
 	"github.com/CAATHARSIS/courier-bot/internal/repository/interfaces"
@@ -380,4 +381,29 @@ func (r *orderAssignmentRepository) GetWiatingByOrderID(ctx context.Context, ord
 	}
 
 	return &assignment, nil
+}
+
+func (r *orderAssignmentRepository) GetAmountOfAcceptedOrdersInOneDay(ctx context.Context, courierID int) (int, error) {
+	query := `
+		SELECT
+			COUNT(*) quantity
+		FROM
+			order_assignments
+		WHERE
+			courier_id = $1
+			AND courier_response_status = 'accepted'
+			AND assigned_at >= $2
+			AND assigned_at < $3
+	`
+	now := time.Now().UTC()
+	startOfDay := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, time.UTC)
+	nextDay := startOfDay.Add(24 * time.Hour)
+
+	var orderQuantity int
+	err := r.db.QueryRowContext(ctx, query, courierID, startOfDay, nextDay).Scan(&orderQuantity)
+	if err != nil {
+		return 0, fmt.Errorf("failed to get order quantity in one day: %v", err)
+	}
+
+	return orderQuantity, nil
 }

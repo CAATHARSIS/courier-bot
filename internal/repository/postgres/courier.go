@@ -81,6 +81,7 @@ func (r *courierRepository) GetByID(ctx context.Context, id int) (*models.Courie
 		&courier.IsActive,
 		&courier.LastUpdated,
 		&courier.Rating,
+		&courier.CreatedAt,
 	)
 
 	if err != nil {

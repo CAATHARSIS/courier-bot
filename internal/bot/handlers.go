@@ -75,7 +75,7 @@ func (h *Handlers) HandleMessage(ctx context.Context, bot BotInterface, update t
 	case "/orders", "📋 Мои заказы":
 		h.HandleMyOrdersCommand(ctx, bot, chatID)
 	case "/status", "ℹ️ Статус":
-		h.HandleStatusCommand(bot, chatID)
+		h.HandleStatusCommand(ctx, bot, chatID)
 	case "/settings", "⚙️ Смена":
 		h.HandleWorkmodeSettings(ctx, bot, chatID)
 	case "❌ Отмена":
@@ -281,12 +281,30 @@ func (h *Handlers) HandleWorkmodeSettings(ctx context.Context, bot BotInterface,
 }
 
 // ЭТО ЗАГЛУШКА, ЙОУ
-func (h *Handlers) HandleStatusCommand(bot BotInterface, chatID int64) {
-	message := "ℹ️ *Ваш статус*\n\n" +
-		"• 📱 Статус: *Активен*\n" +
-		"• 📊 Заказов сегодня: *0*\n" +
-		"• ⭐ Рейтинг: *Ты заглушечка*\n\n" +
-		"Вы готовы принимать новые заказы! 🚀"
+func (h *Handlers) HandleStatusCommand(ctx context.Context, bot BotInterface, chatID int64) {
+	isActive := "Не активен"
+
+	courier, err := h.assignmentManager.GetCourierByChatID(ctx, chatID)
+	if err != nil {
+		h.log.Error("Failed to get courier for statistic", "Error", err)
+		bot.SendMessage(chatID, "❌ Ошибка на стороне сервера, попробуйте позже")
+	}
+
+	if courier.IsActive {
+		isActive = "Активен"
+	}
+
+	quantity, err := h.assignmentManager.GetAmountOfAcceptedOrdersInOneDay(ctx, courier.ID)
+	if err != nil {
+		h.log.Error("Failed to get orders quantity", "Error", err)
+		bot.SendMessage(chatID, "❌ Ошибка на стороне сервера, попробуйте позже")
+	}
+
+	message := fmt.Sprintf("*Ваш статус*\n\n" +
+		"• Статус: *%s*\n" +
+		"• Заказов сегодня: *%d*\n" +
+		"• ⭐ Рейтинг: *%.2f*\n\n" +
+		"Вы готовы принимать новые заказы!", isActive, quantity, courier.Rating)
 
 	bot.SendMessage(chatID, message)
 }
@@ -595,10 +613,10 @@ func (h *Handlers) HandleChangeWorkmode(ctx context.Context, bot BotInterface, c
 		}
 
 		message := fmt.Sprintf(
-			"🚗 *Смена начата!*\n\n" +
-				"📍 Местоположение сохранено\n" +
+			"*Смена начата!*\n\n" +
+				"Местоположение сохранено\n" +
 				"✅ Вы активны и готовы к работе\n\n" +
-				"Ожидайте уведомления о новых заказах! 📦",
+				"Ожидайте уведомления о новых заказах!",
 		)
 
 		keyboard := h.keyboardManager.CreateMainMenuKeyboard()
@@ -665,10 +683,10 @@ func (h *Handlers) HandleLocation(ctx context.Context, bot BotInterface, chatID 
 		}
 
 		message := fmt.Sprintf(
-			"🚗 *Смена начата!*\n\n" +
-				"📍 Местоположение сохранено\n" +
+			"*Смена начата!*\n\n" +
+				"Местоположение сохранено\n" +
 				"✅ Вы активны и готовы к работе\n\n" +
-				"Ожидайте уведомления о новых заказах! 📦",
+				"Ожидайте уведомления о новых заказах!",
 		)
 
 		keyboard := h.keyboardManager.CreateMainMenuKeyboard()
@@ -802,7 +820,7 @@ func (h *Handlers) formatOrdersSummary(orderItems []OrderListItem) string {
 
 	summary := fmt.Sprintf(
 		"📋 *Ваши активные заказы*\n\n"+
-			"📊 *Статистика:*\n"+
+			"*Статистика:*\n"+
 			"• ⏳ Ожидают подтверждения: %d\n"+
 			"• ✅ Приняты в работу: %d\n"+
 			"• 📈 Всего активных: %d\n\n",
