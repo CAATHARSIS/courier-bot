@@ -21,6 +21,7 @@ type Handlers struct {
 	keyboardManager   KeyboardManagerInterface
 	webhookSecret     string
 	log               *slog.Logger
+	client            *http.Client
 	local             bool
 }
 
@@ -30,6 +31,9 @@ func NewHandlers(assignmentManager *assignment.Manager, keyboardManager Keyboard
 		keyboardManager:   keyboardManager,
 		webhookSecret:     webhookSecret,
 		log:               log,
+		client: &http.Client{
+			Timeout: 10 * time.Second,
+		},
 		local:             local,
 	}
 }
@@ -300,10 +304,10 @@ func (h *Handlers) HandleStatusCommand(ctx context.Context, bot BotInterface, ch
 		bot.SendMessage(chatID, "❌ Ошибка на стороне сервера, попробуйте позже")
 	}
 
-	message := fmt.Sprintf("*Ваш статус*\n\n" +
-		"• Статус: *%s*\n" +
-		"• Заказов сегодня: *%d*\n" +
-		"• ⭐ Рейтинг: *%.2f*\n\n" +
+	message := fmt.Sprintf("*Ваш статус*\n\n"+
+		"• Статус: *%s*\n"+
+		"• Заказов сегодня: *%d*\n"+
+		"• ⭐ Рейтинг: *%.2f*\n\n"+
 		"Вы готовы принимать новые заказы!", isActive, quantity, courier.Rating)
 
 	bot.SendMessage(chatID, message)
@@ -388,7 +392,7 @@ func (h *Handlers) HandleCompleteOrder(ctx context.Context, bot BotInterface, ch
 	if h.local {
 		host = "https://shaurma-jan.ru"
 	} else {
-		host = "app:8080"
+		host = "app:8000"
 	}
 
 	deliveryURL := fmt.Sprintf("%s/v1/admin/delivery/%d", host, orderID)
@@ -400,11 +404,7 @@ func (h *Handlers) HandleCompleteOrder(ctx context.Context, bot BotInterface, ch
 		return
 	}
 
-	client := &http.Client{
-		Timeout: 10 * time.Second,
-	}
-
-	resp, err := client.Do(req)
+	resp, err := h.client.Do(req)
 	if err != nil {
 		h.log.Error("Error sending request", "error", err)
 		bot.SendMessage(chatID, "❌ Ошибка обработки заказа")
@@ -432,7 +432,7 @@ func (h *Handlers) HandleCompleteOrder(ctx context.Context, bot BotInterface, ch
 		bot.SendMessage(chatID, "❌ Ошибка обработки геолокации")
 	}
 
-	if time.Now().UTC().Sub(courier.LastUpdated) < 2 * time.Second {
+	if time.Now().UTC().Sub(courier.LastUpdated) < 2*time.Second {
 		message = "*Обновите вашу геолокацию для корректной работы бота:*\n\n" +
 			"1. Нажмите на скрепку 📎 рядом с полем ввода\n" +
 			"2. Выберите «Геопозиция»\n" +
@@ -651,6 +651,34 @@ func (h *Handlers) HandleChangeWorkmode(ctx context.Context, bot BotInterface, c
 
 // UTILITY METHODS
 
+func (h *Handlers) sendUpdatingLocationWebhook(courierID int) {
+	host := "app:8000"
+	
+	if h.local {
+		host = "https://shaurma-jan.ru"
+	}
+
+	url := fmt.Sprintf("%s/v1/admin/update_active_orders/%d",host, courierID)
+
+	req, err := http.NewRequest("PUT", url, nil)
+	if err != nil {
+		h.log.Error("Failed to send webhook to update courier location", "Error", err)
+		return
+	}
+
+	resp, err := h.client.Do(req)
+	if err != nil {
+		h.log.Error("Sending request error", "Error", err)
+		return
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		h.log.Error("Invalid response code", "code", resp.StatusCode)
+		return
+	}
+}
+
 func (h *Handlers) HandleLocation(ctx context.Context, bot BotInterface, chatID int64, latitude, longitude float64) {
 	h.log.Info("Received location", "chatID", chatID, "lat", latitude, "lon", longitude)
 
@@ -665,6 +693,15 @@ func (h *Handlers) HandleLocation(ctx context.Context, bot BotInterface, chatID 
 		bot.SendMessage(chatID, "❌ Ошибка обновления геопозиции")
 		return
 	}
+
+	courier, err := h.assignmentManager.GetCourierByChatID(ctx, chatID)
+	if err != nil {
+		h.log.Error("Failed to update courier location", "chatID", chatID, "error", err)
+		bot.SendMessage(chatID, "❌ Ошибка обновления геопозиции")
+		return
+	}
+	
+	h.sendUpdatingLocationWebhook(courier.ID)
 
 	isActive, err := h.assignmentManager.GetCourierIsActiveStatus(ctx, chatID)
 	if err != nil {

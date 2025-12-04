@@ -37,9 +37,9 @@ type AssignmentManagerConfig struct {
 }
 
 type AssignmentResult struct {
-	Success      bool
-	CourierID    int
-	ErrorMessage string
+	Success   bool
+	CourierID int
+	Message   string
 }
 
 type WaitingOrder struct {
@@ -99,7 +99,7 @@ func (m *Manager) ProcessNewOrder(ctx context.Context, orderID int) error {
 	}
 
 	if !result.Success {
-		m.log.Warn("No courier found for order", "orderID", orderID, "errorMessage", result.ErrorMessage)
+		m.log.Warn("No courier found for order", "orderID", orderID, "errorMessage", result.Message)
 	}
 
 	return nil
@@ -125,8 +125,8 @@ func (m *Manager) findAndAssignCourier(ctx context.Context, orderID int) (*Assig
 
 	if len(couriers) == 0 {
 		return &AssignmentResult{
-			Success:      false,
-			ErrorMessage: "No active couriers available",
+			Success: false,
+			Message: "No active couriers available",
 		}, nil
 	}
 
@@ -148,8 +148,8 @@ func (m *Manager) findAndAssignCourier(ctx context.Context, orderID int) (*Assig
 
 	m.log.Warn("All acitve couriers rejected order", "orderID", orderID, "courierQuantity", len(couriers))
 	return &AssignmentResult{
-		Success:      false,
-		ErrorMessage: "All available couriers rejected this order",
+		Success: false,
+		Message: "All available couriers rejected this order",
 	}, nil
 }
 
@@ -163,8 +163,8 @@ func (m *Manager) assignOrderToCourier(ctx context.Context, orderID, courierID i
 
 	if order.CourierID != nil {
 		return &AssignmentResult{
-			Success:      false,
-			ErrorMessage: "Order already assigned to another courier",
+			Success: false,
+			Message: "Order already assigned to another courier",
 		}, nil
 	}
 
@@ -637,7 +637,7 @@ func (m *Manager) sendNotificationWithDeliveryKeyboard(chatID int64, message str
 
 	if order.Address != "" {
 		navigationRow := tgbotapi.NewInlineKeyboardRow(
-			tgbotapi.NewInlineKeyboardButtonData("🗺️ Построить маршрут", fmt.Sprintf("nav_%d_%s", orderID, m.EscapeCallbackData(order.Address + "_" + order.City))),
+			tgbotapi.NewInlineKeyboardButtonData("🗺️ Построить маршрут", fmt.Sprintf("nav_%d_%s", orderID, m.EscapeCallbackData(order.Address+"_"+order.City))),
 		)
 		rows = append(rows, navigationRow)
 	}
