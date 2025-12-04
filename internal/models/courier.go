@@ -16,5 +16,4 @@ type Courier struct {
 	LastUpdated  time.Time    `json:"last_seen"`
 	Rating       float64      `json:"rating"`
 	CreatedAt    time.Time    `json:"created_at"`
-	TrackingMode bool         `json:"tracking_mode"`
 }

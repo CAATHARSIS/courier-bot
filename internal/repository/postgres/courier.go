@@ -65,8 +65,7 @@ func (r *courierRepository) GetByID(ctx context.Context, id int) (*models.Courie
 			is_active,
 			last_updated,
 			rating,
-			created_at,
-			tracking_mode
+			created_at
 		FROM
 			couriers
 		WHERE
@@ -82,8 +81,6 @@ func (r *courierRepository) GetByID(ctx context.Context, id int) (*models.Courie
 		&courier.IsActive,
 		&courier.LastUpdated,
 		&courier.Rating,
-		&courier.CreatedAt,
-		&courier.TrackingMode,
 	)
 
 	if err != nil {
@@ -121,8 +118,7 @@ func (r *courierRepository) List(ctx context.Context) ([]*models.Courier, error)
 			is_active,
 			last_updated,
 			rating,
-			created_at,
-			tracking_mode
+			created_at
 		FROM
 			couriers
 		ORDER BY
@@ -149,7 +145,6 @@ func (r *courierRepository) List(ctx context.Context) ([]*models.Courier, error)
 			&courier.LastUpdated,
 			&courier.Rating,
 			&courier.CreatedAt,
-			&courier.TrackingMode,
 		)
 
 		if err != nil {
@@ -176,8 +171,7 @@ func (r *courierRepository) GetActiveCouriers(ctx context.Context) ([]*models.Co
 			is_active,
 			last_updated,
 			rating,
-			created_at,
-			tracking_mode
+			created_at
 		FROM
 			couriers
 		WHERE
@@ -204,7 +198,6 @@ func (r *courierRepository) GetActiveCouriers(ctx context.Context) ([]*models.Co
 			&activeCourier.LastUpdated,
 			&activeCourier.Rating,
 			&activeCourier.CreatedAt,
-			&activeCourier.TrackingMode,
 		)
 		if err != nil {
 			return nil, fmt.Errorf("failed to scan active courier: %v", err)
@@ -230,8 +223,7 @@ func (r *courierRepository) GetByChatID(ctx context.Context, chatID int64) (*mod
 			is_active,
 			last_updated,
 			rating,
-			created_at,
-			tracking_mode
+			created_at
 		FROM
 			couriers
 		WHERE
@@ -249,7 +241,6 @@ func (r *courierRepository) GetByChatID(ctx context.Context, chatID int64) (*mod
 		&courier.LastUpdated,
 		&courier.Rating,
 		&courier.CreatedAt,
-		&courier.TrackingMode,
 	)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get courier by chatID: %v", err)
@@ -310,23 +301,6 @@ func (r courierRepository) UpdateLocation(ctx context.Context, chatID int64, loc
 	return nil
 }
 
-func (r courierRepository) UpdateTrackingMode(ctx context.Context, chatID int64, trackingMode bool) error {
-	query := `
-		UPDATE couriers
-		SET
-			tracking_mode = $1
-		WHERE
-			chat_id = $2
-	`
-
-	_, err := r.db.ExecContext(ctx, query, trackingMode, chatID)
-	if err != nil {
-		return fmt.Errorf("Failed to update tracking mode for courier with chatID #%d: %v", chatID, err)
-	}
-
-	return nil
-}
-
 func (r *courierRepository) GetIsActiveStatus(ctx context.Context, chatID int64) (bool, error) {
 	query := `
 		SELECT
@@ -356,8 +330,7 @@ func (r *courierRepository) GetNearestCouriersInRadius(ctx context.Context, targ
 			is_active,
 			last_updated,
 			rating,
-			created_at,
-			tracking_mode
+			created_at
 		FROM
 			couriers
 		WHERE
@@ -387,7 +360,6 @@ func (r *courierRepository) GetNearestCouriersInRadius(ctx context.Context, targ
 			&courier.LastUpdated,
 			&courier.Rating,
 			&courier.CreatedAt,
-			&courier.TrackingMode,
 		)
 		if err != nil {
 			return nil, fmt.Errorf("failed to scan courier: %v", err)

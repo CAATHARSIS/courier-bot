@@ -788,10 +788,6 @@ func (m *Manager) UpdateCourierLocation(ctx context.Context, chatID int64, locat
 	return m.repo.Courier.UpdateLocation(ctx, chatID, location)
 }
 
-func (m *Manager) UpdateCourierTrackingMode(ctx context.Context, chatID int64, trackingMode bool) error {
-	return m.repo.Courier.UpdateTrackingMode(ctx, chatID, trackingMode)
-}
-
 func (m *Manager) GetCourierIsActiveStatus(ctx context.Context, chatID int64) (bool, error) {
 	return m.repo.Courier.GetIsActiveStatus(ctx, chatID)
 }

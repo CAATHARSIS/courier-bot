@@ -58,17 +58,7 @@ func (h *Handlers) HandleMessage(ctx context.Context, bot BotInterface, update t
 	}
 
 	if location != nil {
-		if location.LivePeriod > 0 && location.LivePeriod <= 28800 {
-			bot.SendMessage(chatID, "❌ Данная опция в боте не доступна")
-			return
-		}
 		h.HandleLocation(ctx, bot, chatID, update.Message.Location.Latitude, update.Message.Location.Longitude)
-
-		if location.LivePeriod == 0 {
-			h.assignmentManager.UpdateCourierTrackingMode(ctx, chatID, false)
-		} else {
-			h.assignmentManager.UpdateCourierTrackingMode(ctx, chatID, true)
-		}
 
 		return
 	}
@@ -424,7 +414,7 @@ func (h *Handlers) HandleCompleteOrder(ctx context.Context, bot BotInterface, ch
 		bot.SendMessage(chatID, "❌ Ошибка обработки геолокации")
 	}
 
-	if !courier.TrackingMode {
+	if time.Now().UTC().Sub(courier.LastUpdated) < 2 * time.Second {
 		message = "*Обновите вашу геолокацию для корректной работы бота:*\n\n" +
 			"1. Нажмите на скрепку 📎 рядом с полем ввода\n" +
 			"2. Выберите «Геопозиция»\n" +
